@@ -32,7 +32,7 @@ Eigen::MatrixXcd readSymm(std::string re, std::string im) {
 	getline(matIm, lineIm);
 
 	int nAO = -0.5 + sqrt(2.0*std::stoi(lineRe) + 0.25);
-	std::cout << "nAO: " << nAO << "\n";
+	//std::cout << "nAO: " << nAO << "\n";
 
 	mat.resize(nAO, nAO);
 	for (int i=0; i<nAO; i++) {
@@ -135,7 +135,7 @@ Eigen::MatrixXcd readHerm(std::string re, std::string im) {
 	getline(matIm, lineIm);
 
 	int nAO = -0.5 + sqrt(2.0*std::stoi(lineRe) + 0.25);
-	std::cout << "nAO: " << nAO << "\n";
+	//std::cout << "nAO: " << nAO << "\n";
 
 	mat.resize(nAO, nAO);
 	for (int i=0; i<nAO; i++) {

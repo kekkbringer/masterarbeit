@@ -26,13 +26,16 @@ $(ODIR)/read_herm.o: read_herm.cpp read_herm.hpp
 $(ODIR)/read_spinor.o: read_spinor.cpp read_spinor.hpp
 	$(CC) -c read_spinor.cpp -o $(ODIR)/read_spinor.o $(CFLAGS) $(SANITIZE)
 
-$(ODIR)/main.o: main.cpp
+$(ODIR)/main.o: main.cpp $(ODIR)
 	$(CC) -c main.cpp -o $(ODIR)/main.o $(CFLAGS) $(SANITIZE)
+
+$(ODIR):
+	[ -d $(ODIR) ] || mkdir -p $(ODIR)
 
 .PHONY: static clean
 
 static: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o
-	$(CC) -o ../bin/polly_sl $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(LFLAGS) -static
+	$(CC) -o ../bin/polly_sl $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o -static $(LFLAGS)
 
 
 clean:

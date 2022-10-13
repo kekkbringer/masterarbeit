@@ -47,6 +47,9 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	const auto smat = readHerm("smat");
+	std::cout << "\nsmat:\n" << smat << "\n";
+	return 0;
 
 
 	/**********************************************************************
