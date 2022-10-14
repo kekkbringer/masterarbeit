@@ -42,9 +42,11 @@ fourD readFourcenter() {
 	std::vector<int> s(atomNum);
 	std::vector<int> p(atomNum);
 	std::vector<int> d(atomNum);
+	std::vector<int> f(atomNum);
 	int sSize = 0;
 	int pSize = 0;
 	int dSize = 0;
+	int fSize = 0;
 	//std::cout << " looking for comments\n";
 	while (getline(basis, line)) {
 		if (line[0] == '#') {
@@ -85,6 +87,14 @@ fourD readFourcenter() {
 								d[atom] += word[i] - '0';
 							}
 							dSize += d[atom];
+							i++;
+							f.push_back(0);
+							for (; i<word.length()-1; i++) { // d
+								if (word[i] == 'f') break;
+								f[atom] *= 10;
+								f[atom] += word[i] - '0';
+							}
+							fSize += f[atom];
 						}
 					}
 				}
@@ -92,13 +102,13 @@ fourD readFourcenter() {
 		}
 	}
 
-	const int fciSize = sSize + 3*pSize + 6*dSize;
-	const int returnSize = sSize + 3*pSize + 5*dSize;
+	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize;
+	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize;
 
-	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+1);
+	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+fSize+1);
 	orbitalIndexMap[0] = {-1};
 
-	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+1);
+	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+fSize+1);
 	returnMap[0] = {-1};
 
 	//std::cout << "init orbitalIndexMap...\n";
@@ -112,7 +122,7 @@ fourD readFourcenter() {
 			orbIndex++;
 			aoIndex++;
 		}
-		aoIndex += 3*p[atom] + 6*d[atom];
+		aoIndex += 3*p[atom] + 6*d[atom] + 10*f[atom];
 	}
 	// second: all p orbitals
 	aoIndex = 0;
@@ -124,7 +134,7 @@ fourD readFourcenter() {
 			orbIndex++;
 			aoIndex += 3;
 		}
-		aoIndex += 6*d[atom];
+		aoIndex += 6*d[atom] + 10*f[atom];
 	}
 	// third: d orbitals
 	aoIndex = 0;
@@ -135,6 +145,19 @@ fourD readFourcenter() {
 			orbitalIndexMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4, aoIndex+5};
 			orbIndex++;
 			aoIndex += 6;
+		}
+		aoIndex += 10*f[atom];
+	}
+	// fourth: f orbitals
+	aoIndex = 0;
+	for (int atom=0; atom<atomNum; atom++) {
+		aoIndex += s[atom]+3*p[atom]+6*d[atom]; // shift by s, p and d
+		// iterate over f-functions of current atom
+		for (int i=0; i<f[atom]; i++) {
+			orbitalIndexMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4,
+						     aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8, aoIndex+9};
+			orbIndex++;
+			aoIndex += 10;
 		}
 	}
 
@@ -156,7 +179,7 @@ fourD readFourcenter() {
 			orbIndex++;
 			aoIndex++;
 		}
-		aoIndex += 3*p[atom] + 5*d[atom];
+		aoIndex += 3*p[atom] + 5*d[atom] + 7*f[atom];
 	}
 	// second: all p orbitals
 	aoIndex = 0;
@@ -168,7 +191,7 @@ fourD readFourcenter() {
 			orbIndex++;
 			aoIndex += 3;
 		}
-		aoIndex += 5*d[atom];
+		aoIndex += 5*d[atom] + 7*f[atom];
 	}
 	// third: d orbitals
 	aoIndex = 0;
@@ -180,7 +203,22 @@ fourD readFourcenter() {
 			orbIndex++;
 			aoIndex += 5;
 		}
+		aoIndex += 7*f[atom];
 	}
+	// fourth: f orbitals
+	aoIndex = 0;
+	for (int atom=0; atom<atomNum; atom++) {
+		aoIndex += s[atom]+3*p[atom]+5*d[atom]; // shift by s, p and d
+		// iterate over f-functions of current atom
+		for (int i=0; i<f[atom]; i++) {
+			returnMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4, aoIndex+5, aoIndex+6};
+			orbIndex++;
+			aoIndex += 7;
+		}
+	}
+
+
+
 	int j=0;
 
 
@@ -342,34 +380,48 @@ fourD readFourcenter() {
 		// check degeneracy
 		if (returnMap[orb].size() == 1) { // s
 			trans[orbitalIndexMap[orb][0]][returnMap[orb][0]] = 1.0;
-			//std::cout << orbitalIndexMap[orb][0] << " -> " << returnMap[orb][0] << "\n";
 		} else if (returnMap[orb].size() == 3) { // p
 			trans[orbitalIndexMap[orb][0]][returnMap[orb][0]] = 1.0;
 			trans[orbitalIndexMap[orb][1]][returnMap[orb][1]] = 1.0;
 			trans[orbitalIndexMap[orb][2]][returnMap[orb][2]] = 1.0;
-			//std::cout << orbitalIndexMap[orb][0] << " -> " << returnMap[orb][0] << "\n";
-			//std::cout << orbitalIndexMap[orb][1] << " -> " << returnMap[orb][1] << "\n";
-			//std::cout << orbitalIndexMap[orb][2] << " -> " << returnMap[orb][2] << "\n";
 		} else if (returnMap[orb].size() == 5) { // d
 			// dz^2
 			trans[orbitalIndexMap[orb][0]][returnMap[orb][0]] = -1.0 * normZZ * beta;
 			trans[orbitalIndexMap[orb][1]][returnMap[orb][0]] = -1.0 * normZZ * beta;
 			trans[orbitalIndexMap[orb][2]][returnMap[orb][0]] =  2.0 * normZZ * beta;
-			//std::cout << "2*" << orbitalIndexMap[orb][2] << " - " << orbitalIndexMap[orb][0] << " - " << orbitalIndexMap[orb][1] << " -> " << returnMap[orb][0] << "\n";
 			// dxz
 			trans[orbitalIndexMap[orb][4]][returnMap[orb][1]] = 1.0 * beta;
-			//std::cout << orbitalIndexMap[orb][4] << " -> " << returnMap[orb][1] << "\n";
 			// dyz
 			trans[orbitalIndexMap[orb][5]][returnMap[orb][2]] = 1.0 * beta;
-			//std::cout << orbitalIndexMap[orb][5] << " -> " << returnMap[orb][2] << "\n";
 			// dxy
 			trans[orbitalIndexMap[orb][3]][returnMap[orb][3]] = 1.0 * beta;
-			//std::cout << orbitalIndexMap[orb][3] << " -> " << returnMap[orb][3] << "\n";
 			// dx^2-y^2
 			trans[orbitalIndexMap[orb][0]][returnMap[orb][4]] =  1.0 * normXXYY * beta;
 			trans[orbitalIndexMap[orb][1]][returnMap[orb][4]] = -1.0 * normXXYY * beta;
-			//std::cout << orbitalIndexMap[orb][0] << " - " << orbitalIndexMap[orb][1] << " -> " << returnMap[orb][4] << "\n";
-
+		} else if (returnMap[orb].size() == 7) { // f
+			// f z^3
+			trans[orbitalIndexMap[orb][2]][returnMap[orb][0]] =  2.0 * 0.5 / sqrt(15);
+			trans[orbitalIndexMap[orb][4]][returnMap[orb][0]] = -3.0 * 0.5 / sqrt(15);
+			trans[orbitalIndexMap[orb][6]][returnMap[orb][0]] = -3.0 * 0.5 / sqrt(15);
+			// f xz^2                                     
+			trans[orbitalIndexMap[orb][7]][returnMap[orb][1]] =  4.0 * 0.5 / sqrt(10);
+			trans[orbitalIndexMap[orb][0]][returnMap[orb][1]] = -1.0 * 0.5 / sqrt(10);
+			trans[orbitalIndexMap[orb][5]][returnMap[orb][1]] = -1.0 * 0.5 / sqrt(10);
+			// f yz^2                                     
+			trans[orbitalIndexMap[orb][8]][returnMap[orb][2]] =  4.0 * 0.5 / sqrt(10);
+			trans[orbitalIndexMap[orb][3]][returnMap[orb][2]] = -1.0 * 0.5 / sqrt(10);
+			trans[orbitalIndexMap[orb][1]][returnMap[orb][2]] = -1.0 * 0.5 / sqrt(10);
+			// f xyz                                      
+			trans[orbitalIndexMap[orb][9]][returnMap[orb][4]] =  1.0;
+			// f z(x^2-y^2)                               
+			trans[orbitalIndexMap[orb][4]][returnMap[orb][3]] =  1.0 * 0.5;
+			trans[orbitalIndexMap[orb][6]][returnMap[orb][3]] = -1.0 * 0.5;
+			// f x(x^2-3y^2)                              
+			trans[orbitalIndexMap[orb][0]][returnMap[orb][5]] =  1.0 * 0.5 / sqrt(6);
+			trans[orbitalIndexMap[orb][5]][returnMap[orb][5]] = -3.0 * 0.5 / sqrt(6);
+			// f y(3x^2-y^2)                              
+			trans[orbitalIndexMap[orb][3]][returnMap[orb][6]] =  3.0 * 0.5 / sqrt(6);
+			trans[orbitalIndexMap[orb][1]][returnMap[orb][6]] = -1.0 * 0.5 / sqrt(6);
 		}
 	}
 

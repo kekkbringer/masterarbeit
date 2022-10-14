@@ -16,7 +16,7 @@
 
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 0
-#define PATCH_VERSION 4
+#define PATCH_VERSION "5-alpha"
 
 int main(int argc, char* argv[]) {	
 	/**********************************************************************
@@ -46,10 +46,6 @@ int main(int argc, char* argv[]) {
 			std::cout << "TDHF enabled\n\n";
 		}
 	}
-
-	const auto smat = readHerm("smat");
-	std::cout << "\nsmat:\n" << smat << "\n";
-	return 0;
 
 
 	/**********************************************************************
