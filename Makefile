@@ -1,7 +1,7 @@
 IDIR = ../include
 CC = g++
-CFLAGS = -I$(IDIR) -std=c++20 -O3 -flto=auto -ffast-math #-march=native #-mavx2 -mfma #-fopenmp #-Wpedantic
-LFLAGS = -O3 -flto=auto -ffast-math #-march=native #-mavx2 -mfma #-fopenmp
+CFLAGS = -I$(IDIR) -std=c++20 -O3 -flto=auto -ffast-math -mavx2 -mfma #-march=native #-fopenmp #-Wpedantic
+LFLAGS = -O3 -flto=auto -ffast-math -mavx2 -mfma #-march=nativ #-fopenmp
 SANITIZE = #-fsanitize=address,undefined
 
 ODIR = obj
