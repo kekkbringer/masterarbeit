@@ -412,10 +412,10 @@ fourD readFourcenter() {
 			trans[orbitalIndexMap[orb][3]][returnMap[orb][2]] = -1.0 * 0.5 / sqrt(10);
 			trans[orbitalIndexMap[orb][1]][returnMap[orb][2]] = -1.0 * 0.5 / sqrt(10);
 			// f xyz                                      
-			trans[orbitalIndexMap[orb][9]][returnMap[orb][4]] =  1.0;
+			trans[orbitalIndexMap[orb][9]][returnMap[orb][3]] =  1.0;
 			// f z(x^2-y^2)                               
-			trans[orbitalIndexMap[orb][4]][returnMap[orb][3]] =  1.0 * 0.5;
-			trans[orbitalIndexMap[orb][6]][returnMap[orb][3]] = -1.0 * 0.5;
+			trans[orbitalIndexMap[orb][4]][returnMap[orb][4]] =  1.0 * 0.5;
+			trans[orbitalIndexMap[orb][6]][returnMap[orb][4]] = -1.0 * 0.5;
 			// f x(x^2-3y^2)                              
 			trans[orbitalIndexMap[orb][0]][returnMap[orb][5]] =  1.0 * 0.5 / sqrt(6);
 			trans[orbitalIndexMap[orb][5]][returnMap[orb][5]] = -3.0 * 0.5 / sqrt(6);

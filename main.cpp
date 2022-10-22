@@ -47,6 +47,10 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	//const auto smat = readHerm("smat");
+	//std::cout << smat << "\n";
+	//return 0;
+
 
 	/**********************************************************************
 	 *                          print banner                              *
