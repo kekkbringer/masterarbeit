@@ -203,7 +203,7 @@ Eigen::MatrixXcd readHerm(std::string f) {
 	getline(matRe, lineRe);
 	getline(matIm, lineIm);
 	int comp = nAO*(nAO-1)/2 + nAO;
-	//if (stoi(lineRe) != comp) {std::cout << "\nWARNING: dimensions dont match!" << comp << " vs " << lineRe << "\n\n"; return mat;}
+	if (stoi(lineRe) != comp) {std::cout << "\nWARNING: dimensions dont match!" << comp << " vs " << lineRe << "\n\n"; return mat;}
 
 	for (int i=0; i<nAO; i++) {
 		for (int j=0; j<=i; j++) {
