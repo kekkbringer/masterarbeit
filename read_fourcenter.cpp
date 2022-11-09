@@ -37,7 +37,7 @@ fourD readFourcenter() {
 	std::ifstream basis("basis");
 	if (basis.fail()) std::cout << "\nWARNING: could not read basis file!\n";
 	std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
-	std::cout << "      minor warning: only s-, p- and d-type orbitals are supported yet!\n";
+	std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
 
 	std::vector<int> s(atomNum);
 	std::vector<int> p(atomNum);

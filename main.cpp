@@ -147,25 +147,26 @@ int main(int argc, char* argv[]) {
 		basisFunctionLength[i] = s[i] + 3*p[i] + 5*d[i] + 7*f[i];
 		matrixSize += s[i] + 3*p[i] + 5*d[i] + 7*f[i];
 	}
-	std::cout << "matrix size: " << matrixSize << "\n\n";
+	//std::cout << "matrix size: " << matrixSize << "\n\n";
 
 
 
-	std::cout << "      number of atoms: " << atomNum << "\n";
+	//std::cout << "      number of atoms: " << atomNum << "\n";
 	int lower = 0;
 	int upper = 0;
 	for (int i=0; i<atomNum; i++)  {
-		std::cout << atoms[i] << "   " << basisFunctionLength[i] << "\n";
+		//std::cout << atoms[i] << "   " << basisFunctionLength[i] << "\n";
 		if (i<nuc) lower += basisFunctionLength[i];
 		if (i<=nuc) upper += basisFunctionLength[i];
 	}
-	std::cout << "lower = " << lower << "\n";
-	std::cout << "upper = " << upper << "\n";
+	//std::cout << "lower = " << lower << "\n";
+	//std::cout << "upper = " << upper << "\n";
 
 
 	// read smat just for fun and spin zeeman...
-	std::cout << "reading smat...\n";
+	std::cout << "reading smat...";
 	const auto smat = readHerm("smat");
+	std::cout << "   done\n";
 	//std::cout << "\nsmat:\n" << smat << "\n\n";
 	
 	/**********************************************************************
@@ -213,9 +214,9 @@ int main(int argc, char* argv[]) {
 			Bnorm = std::stod(word);
 		}
 	}
-	std::cout << "first " << nocc << " spinors are occupied\n";
-	std::cout << "magnetic field strength: " << Bnorm << "\n";
-	std::cout << "  direction:             " << Bx << "  " << By << "  " << Bz << "\n";
+	std::cout << "   first " << nocc << " spinors are occupied\n";
+	std::cout << "   magnetic field strength: " << Bnorm << "\n";
+	std::cout << "      direction:             " << Bx << "  " << By << "  " << Bz << "\n";
 	// normalize B
 	const double lambda = Bnorm / sqrt(Bx*Bx + By*By + Bz*Bz);
 	Bx *= lambda;
@@ -234,7 +235,7 @@ int main(int argc, char* argv[]) {
 	 *                             overlap and stuff                             *
 	 ****************************************************************************/
 	// split sbra and sket files
-	std::cout << "\nsplitting sbra and sket files...\n";
+	std::cout << "\nsplitting sbra and sket files...";
 	std::ifstream sbraRe("sbra.r");
 	std::ifstream sbraIm("sbra.i");
 	std::ifstream sketRe("sket.r");
@@ -328,6 +329,8 @@ int main(int argc, char* argv[]) {
 	sketRe.close();
 	sketIm.close();
 
+	std::cout << "   done\n";
+
 
 	// construct S_ab^(N_x)
 	// N is in nuc
@@ -344,7 +347,7 @@ int main(int argc, char* argv[]) {
 	 *                         core hamilton and stuff                           *
 	 ****************************************************************************/
 	// split hgrad files
-	std::cout << "\nsplitting hgrad files...\n";
+	std::cout << "\nsplitting hgrad files...";
 	std::ifstream hgradRe("hgrad.r");
 	std::ifstream hgradIm("hgrad.i");
 	if (hgradRe.fail()) std::cout << "\nERROR reading some files!\n";
@@ -400,6 +403,7 @@ int main(int argc, char* argv[]) {
 	hgradRe.close();
 	hgradIm.close();
 
+	std::cout << "   done\n";
 
 	// construct H_ab^(N_x)
 	// N is in nuc
@@ -646,24 +650,25 @@ int main(int argc, char* argv[]) {
 		enucnx[a][2] *= chargeOf(atoms[a]);
 	}
 
-	// print derivatives d(Vnn)/dNx
+	/* print derivatives d(Vnn)/dNx
 	std::cout << "\nderivatives of Vnn:\n";
 	for (int a=0; a<atomNum; a++) {
 		std::cout << enucnx[a][0] << "   " << enucnx[a][1] << "   " << enucnx[a][2] << "\n";
 	}
+	//*/
 
 
 
 
 	// ==================================== small debug print ===================================
 
-	std::cout << std::setprecision(10);
-	std::cout << "enuc: " << enuc << "\n";
-	std::cout << "1e energy: " << e1.real() << "\n";
-	std::cout << "spin-Zeeman energy x: " << eSpinZeemanX.real() << "\n";
-	std::cout << "spin-Zeeman energy y: " << eSpinZeemanY.real() << "\n";
-	std::cout << "spin-Zeeman energy z: " << eSpinZeemanZ.real() << "\n";
-	std::cout << "total 1e: " << (e1 + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ).real() << "\n";
+	//std::cout << std::setprecision(10);
+	//std::cout << "enuc: " << enuc << "\n";
+	//std::cout << "1e energy: " << e1.real() << "\n";
+	//std::cout << "spin-Zeeman energy x: " << eSpinZeemanX.real() << "\n";
+	//std::cout << "spin-Zeeman energy y: " << eSpinZeemanY.real() << "\n";
+	//std::cout << "spin-Zeeman energy z: " << eSpinZeemanZ.real() << "\n";
+	//std::cout << "total 1e: " << (e1 + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ).real() << "\n";
 
 
 
@@ -704,11 +709,11 @@ int main(int argc, char* argv[]) {
 	const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
 	const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
 	//std::cout << "fock:\n" << fock << "\n\n";
-	for (int i=0; i<nocc; i++) {
-		std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
-		std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
-	}
-	std::cout << "\n";
+	//for (int i=0; i<nocc; i++) {
+	//	std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
+	//	std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
+	//}
+	//std::cout << "\n";
 
 
 	// calculate energy weighted density matrix W
@@ -793,25 +798,25 @@ int main(int argc, char* argv[]) {
 	etot += enuc + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ;
 	//*/
 
-	std::cout << "\ngradient (without Vnn): " << gradW + gradF << "\n";
-	std::cout << "gradW:                  " << gradW << "\n";
-	std::cout << "gradF+H:                " << gradF << "\n";
+	//std::cout << "\ngradient (without Vnn): " << gradW + gradF << "\n";
+	//std::cout << "gradW:                  " << gradW << "\n";
+	//std::cout << "gradF+H:                " << gradF << "\n";
 	std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
 	std::cout << "\n\nalternativer weg:\n";
-	std::cout << "spin factor: " << spinFactor << "\n";
-	std::cout << "gradHa:  " << gradHa << "\n";
-	std::cout << "gradWa:  " << gradWa << "\n";
-	std::cout << "gradCa:  " << gradCa << "\n";
-	std::cout << "gradKa:  " << gradKa << "\n";
-	std::cout << "gradZa:  " << gradZa << "\n";
-	std::cout << "gradnuc: " << enucnx[nuc][cart] << "\n";
+	//std::cout << "spin factor: " << spinFactor << "\n";
+	//std::cout << "gradHa:  " << gradHa << "\n";
+	//std::cout << "gradWa:  " << gradWa << "\n";
+	//std::cout << "gradCa:  " << gradCa << "\n";
+	//std::cout << "gradKa:  " << gradKa << "\n";
+	//std::cout << "gradZa:  " << gradZa << "\n";
+	//std::cout << "gradnuc: " << enucnx[nuc][cart] << "\n";
 	std::cout << "total:   " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
-	std::cout << "\n\ntotal SCF-energy:   " << etot << "\n";
+	//std::cout << "\n\ntotal SCF-energy:   " << etot << "\n";
 
-	std::cout << "\n\nnuclear gradient: " << enucnx[nuc][cart] << "\n";
-	std::cout << "vor coulomb:      " << gradHa + gradWa + gradZa + enucnx[nuc][cart] << "\n";
-	std::cout << "vor exchange:     " << gradHa + gradWa + gradCa + gradZa + enucnx[nuc][cart] << "\n";
-	std::cout << "total:            " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
+	//std::cout << "\n\nnuclear gradient: " << enucnx[nuc][cart] << "\n";
+	//std::cout << "vor coulomb:      " << gradHa + gradWa + gradZa + enucnx[nuc][cart] << "\n";
+	//std::cout << "vor exchange:     " << gradHa + gradWa + gradCa + gradZa + enucnx[nuc][cart] << "\n";
+	//std::cout << "total:            " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
 
 	//std::cout << "\n\nW(0, 0) = " << W(0, 0) << "\n";
 	//std::cout << "\n\nW:\n" << W << "\n";
@@ -829,13 +834,13 @@ int main(int argc, char* argv[]) {
 	//std::cout << "ej: "  << ej << "\n";
 	
 	// debug energy
-	std::complex<double> edebug = 0.0;
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			edebug += 0.5 * denMat(i, j) * (fockSAO(i, j) + hmatkek(i, j));
-			//std::cout << 0.5 * denMat(i, j) * (fockSAO(i, j) + hmatkek(i, j)) << "\n";
-		}
-	}
+	//std::complex<double> edebug = 0.0;
+	//for (int i=0; i<spinorSize; i++) {
+	//	for (int j=0; j<spinorSize; j++) {
+	//		edebug += 0.5 * denMat(i, j) * (fockSAO(i, j) + hmatkek(i, j));
+	//		//std::cout << 0.5 * denMat(i, j) * (fockSAO(i, j) + hmatkek(i, j)) << "\n";
+	//	}
+	//}
 	//std::cout << "\n\ndebug energy: " << edebug+enuc << "\n\n";
 
 	//std::cout << std::setprecision(5);
@@ -844,4 +849,6 @@ int main(int argc, char* argv[]) {
 	//std::cout << "\n\nWbb:\n" << W(Eigen::seqN(matrixSize, matrixSize), Eigen::seqN(matrixSize, matrixSize)) << "\n";
 	//std::cout << "\n\nWsym:\n" << W(Eigen::seqN(0, matrixSize), Eigen::seqN(0, matrixSize)) + W(Eigen::seqN(matrixSize, matrixSize), Eigen::seqN(matrixSize, matrixSize)) << "\n";
 
+	std::cout << "\n";
+	return 0;
 }

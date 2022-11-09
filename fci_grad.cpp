@@ -40,7 +40,7 @@ fourD fciAlt(int nuc, int cart, int lower, int upper) {
 	std::ifstream basis("basis");
 	if (basis.fail()) std::cout << "\nWARNING: could not read basis file!\n";
 	std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
-	std::cout << "      minor warning: only s-, p- and d-type orbitals are supported yet!\n";
+	std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
 
 	std::vector<int> s(atomNum);
 	std::vector<int> p(atomNum);
@@ -421,7 +421,7 @@ fourD fciAlt(int nuc, int cart, int lower, int upper) {
 	if (full == false) {
 		std::cout << "\n\nWARNING: g4c was not correctly defined!\n\n";
 	} else {
-		std::cout << "\n\nATTENTION: g4c might be correct...\n\n";
+		//std::cout << "\n\nATTENTION: g4c might be correct...\n\n";
 	}
 
 	std::cout << "\n";
