@@ -5,4 +5,4 @@
 
 #include "read_fourcenter.hpp"
 
-fourD fciAlt(int nuc, int cart, int lower, int upper);
+fourD fciAlt(int nuc, int cart);

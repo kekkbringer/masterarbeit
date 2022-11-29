@@ -1,20 +1,13 @@
 #pragma once
 
-#include <string>
-#include <iostream>
-#include <complex>
 #include <Eigen/Core>
+#include <string>
 
-int chargeOf(std::string a) {
-		if (a=="h" ) return 1;
-		if (a=="he") return 2;
-		if (a=="li") return 3;
-		if (a=="be") return 4;
-		if (a=="b" ) return 5;
-		if (a=="c" ) return 6;
-		if (a=="n" ) return 7;
-		if (a=="o" ) return 8;
-		if (a=="f" ) return 9;
-		if (a=="ne") return 10;
-		return 0;
-}
+int chargeOf(std::string a);
+
+void info(int& atomNumber, int& noccupied, int& nvirtual, double& bfieldx, double& bfieldy, double& bfieldz, double& bfieldnorm);
+
+Eigen::VectorXcd readVector(std::string file);
+void saveVector(Eigen::VectorXcd vec, std::string name);
+void splitBraKet(int atomNum);
+Eigen::MatrixXcd readNumSpinor(std::string filename);

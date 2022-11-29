@@ -10,7 +10,7 @@
 #include <array>
 #include <algorithm>
 
-fourD fciAlt(int nuc, int cart, int lower, int upper) {
+fourD fciAlt(int nuc, int cart) {
 	std::cout << std::flush;
 
 	// reading coord file to know which atoms occur in which order
@@ -285,10 +285,10 @@ fourD fciAlt(int nuc, int cart, int lower, int upper) {
 		iss >> word; i = stoi(word);
 		iss >> word; j = stoi(word);
 		iss >> word; a = stoi(word);
-		//getline(re, line);
-		//getline(im, lineIm);
-		//b = stoi(line);
-		iss >> word; b = stoi(word);
+		getline(re, line);
+		getline(im, lineIm);
+		b = stoi(line);
+		//iss >> word; b = stoi(word);
 
 		// derivative stuff
 		getline(re, line);

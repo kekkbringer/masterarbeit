@@ -1,18 +1,28 @@
 IDIR = ../include
 CC = g++
-CFLAGS = -I$(IDIR) -std=c++20 -O3 -flto=auto -mavx2 -mfma #-ffast-math #-march=native #-fopenmp #-Wpedantic
-LFLAGS = -O3 -flto=auto -mavx2 -mfma #-ffast-math #-march=nativ #-fopenmp
+CFLAGS = -I$(IDIR) -std=c++20 -O3 -flto=auto -mavx2 -mfma -static #-ffast-math #-march=native #-fopenmp #-Wpedantic
+LFLAGS = -O3 -flto=auto -mavx2 -mfma -static #-ffast-math #-march=nativ #-fopenmp
 SANITIZE = #-fsanitize=address,undefined
 
 ODIR = obj
 
 all: ../bin/polly
 
-../bin/polly: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o
-	$(CC) -o ../bin/polly $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(LFLAGS)
+debug: CFLAGS += -g
+debug: LFLAGS += -g
+debug: ../bin/polly
+
+../bin/polly: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o
+	$(CC) -o ../bin/polly $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(LFLAGS)
 
 $(ODIR)/calc_stabmat.o: calc_stabmat.cpp calc_stabmat.hpp
 	$(CC) -c calc_stabmat.cpp -o $(ODIR)/calc_stabmat.o $(CFLAGS) $(SANITIZE)
+
+$(ODIR)/misc.o: misc.cpp misc.hpp
+	$(CC) -c misc.cpp -o $(ODIR)/misc.o $(CFLAGS) $(SANITIZE)
+
+$(ODIR)/berry_rhs.o: berry_rhs.cpp berry_rhs.hpp
+	$(CC) -c berry_rhs.cpp -o $(ODIR)/berry_rhs.o $(CFLAGS) $(SANITIZE)
 
 $(ODIR)/cphf.o: cphf.cpp cphf.hpp
 	$(CC) -c cphf.cpp -o $(ODIR)/cphf.o $(CFLAGS) $(SANITIZE)
@@ -37,8 +47,8 @@ $(ODIR):
 
 .PHONY: static clean
 
-static: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o
-	$(CC) -o ../bin/polly_sl $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o -static $(LFLAGS)
+static: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o
+	$(CC) -o ../bin/polly_sl $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o -static $(LFLAGS)
 
 
 clean:
