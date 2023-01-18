@@ -121,18 +121,18 @@ int main(int argc, char* argv[]) {
 			//const auto snxbraIAMO = spinor.adjoint() * tmp1 * spinor;
 			
 			// bra abgeleitete matrix
-			auto snxbraIA = readHerm("b" + std::to_string(I) + cartDict[alpha]);
-			auto snxketIA = readHerm("k" + std::to_string(I) + cartDict[alpha]);
-			//auto snxbraIA = readMatrix("b" + std::to_string(I) + cartDict[alpha]);
-			//auto snxketIA = readMatrix("k" + std::to_string(I) + cartDict[alpha]);
-			// switch lower triangle of snxbra and snxket
-			auto tmpbraIA = snxbraIA;
-			for (int i=0; i<spinorSize/2; i++) {
-				for (int j=0; j<i; j++) {
-					snxbraIA(i, j) = snxketIA(i, j);
-					snxketIA(i, j) = tmpbraIA(i, j);
-				}
-			}
+			auto snxbraIA = readMatrix("b" + std::to_string(I) + cartDict[alpha]);
+			auto snxketIA = readMatrix("k" + std::to_string(I) + cartDict[alpha]);
+			//auto snxbraIA = readHerm("b" + std::to_string(I) + cartDict[alpha]);
+			//auto snxketIA = readHerm("k" + std::to_string(I) + cartDict[alpha]);
+			//// switch lower triangle of snxbra and snxket
+			//auto tmpbraIA = snxbraIA;
+			//for (int i=0; i<spinorSize/2; i++) {
+			//	for (int j=0; j<i; j++) {
+			//		snxbraIA(i, j) = snxketIA(i, j);
+			//		snxketIA(i, j) = tmpbraIA(i, j);
+			//	}
+			//}
 			
 			Eigen::MatrixXcd tmp1(spinorSize, spinorSize);
 			tmp1 << snxbraIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
@@ -167,18 +167,18 @@ int main(int argc, char* argv[]) {
 					//auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
 					
 					// bra abgeleitete matrix
-					auto snxbraJB = readHerm("b" + std::to_string(J) + cartDict[beta]);
-					auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
-					//auto snxbraJB = readMatrix("b" + std::to_string(J) + cartDict[beta]);
-					//auto snxketJB = readMatrix("k" + std::to_string(J) + cartDict[beta]);
-					// switch lower triangle of snxbra and snxket
-					const auto tmpbraJB = snxbraJB;
-					for (int i=0; i<spinorSize/2; i++) {
-						for (int j=0; j<i; j++) {
-							snxbraJB(i, j) = snxketJB(i, j);
-							snxketJB(i, j) = tmpbraJB(i, j);
-						}
-					}
+					auto snxbraJB = readMatrix("b" + std::to_string(J) + cartDict[beta]);
+					auto snxketJB = readMatrix("k" + std::to_string(J) + cartDict[beta]);
+					//auto snxbraJB = readHerm("b" + std::to_string(J) + cartDict[beta]);
+					//auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
+					//// switch lower triangle of snxbra and snxket
+					//const auto tmpbraJB = snxbraJB;
+					//for (int i=0; i<spinorSize/2; i++) {
+					//	for (int j=0; j<i; j++) {
+					//		snxbraJB(i, j) = snxketJB(i, j);
+					//		snxketJB(i, j) = tmpbraJB(i, j);
+					//	}
+					//}
 					
 					Eigen::MatrixXcd tmp2(spinorSize, spinorSize);
 					tmp2 << snxketJB, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
@@ -198,16 +198,17 @@ int main(int argc, char* argv[]) {
 					//const auto braketMO = spinor.adjoint() * tmp3 * spinor;
 					
 					// doppelt abgeleitete overlap matrix
-					auto braketA = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
-					auto braketB = readHerm("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
-					// switch lower triangle
-					auto tmpbraket = braketA;
-					for (int i=0; i<spinorSize/2; i++) {
-						for (int j=0; j<i; j++) {
-							braketA(i, j) = braketB(i, j);
-							braketB(i, j) = tmpbraket(i, j);
-						}
-					}
+					auto braketA = readMatrix("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
+					//auto braketA = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
+					//auto braketB = readHerm("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
+					//// switch lower triangle
+					//auto tmpbraket = braketA;
+					//for (int i=0; i<spinorSize/2; i++) {
+					//	for (int j=0; j<i; j++) {
+					//		braketA(i, j) = braketB(i, j);
+					//		braketB(i, j) = tmpbraket(i, j);
+					//	}
+					//}
 					Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
 					tmp3 << braketA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketA;

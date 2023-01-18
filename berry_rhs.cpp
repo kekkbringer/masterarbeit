@@ -249,7 +249,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	getline(sbraIm, line);
 	getline(sketRe, line);
 	getline(sketIm, line);
-	const int size = stoi(line);
+	int size = stoi(line);
 	
 	for (int i=0; i<atomNum; i++) {
 		// x
@@ -261,8 +261,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 		bix << size << "\n";
 		krx << size << "\n";
 		kix << size << "\n";
-		for (int i=0; i<size; i++) {
-		//for (int i=0; i<size*size; i++) {
+		//for (int i=0; i<size; i++) {
+		for (int i=0; i<size*size; i++) {
 			getline(sbraRe, line);
 			brx << line << "\n";
 			getline(sbraIm, line);
@@ -286,8 +286,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 		biy << size << "\n";
 		kry << size << "\n";
 		kiy << size << "\n";
-		for (int i=0; i<size; i++) {
-		//for (int i=0; i<size*size; i++) {
+		//for (int i=0; i<size; i++) {
+		for (int i=0; i<size*size; i++) {
 			getline(sbraRe, line);
 			bry << line << "\n";
 			getline(sbraIm, line);
@@ -311,8 +311,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 		biz << size << "\n";
 		krz << size << "\n";
 		kiz << size << "\n";
-		for (int i=0; i<size; i++) {
-		//for (int i=0; i<size*size; i++) {
+		//for (int i=0; i<size; i++) {
+		for (int i=0; i<size*size; i++) {
 			getline(sbraRe, line);
 			brz << line << "\n";
 			getline(sbraIm, line);
@@ -339,13 +339,13 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	// N is in nuc
 	// x is in cart
 	const std::string cartDict[] = {"x", "y", "z"};
-	const auto bra = readHerm("b" + std::to_string(nuc) + cartDict[cart]);
-	const auto ket = readHerm("k" + std::to_string(nuc) + cartDict[cart]);
-	//const auto bra = readMatrix("b" + std::to_string(nuc) + cartDict[cart]);
-	//const auto ket = readMatrix("k" + std::to_string(nuc) + cartDict[cart]);
+	//const auto bra = readHerm("b" + std::to_string(nuc) + cartDict[cart]);
+	//const auto ket = readHerm("k" + std::to_string(nuc) + cartDict[cart]);
+	const auto bra = readMatrix("b" + std::to_string(nuc) + cartDict[cart]);
+	const auto ket = readMatrix("k" + std::to_string(nuc) + cartDict[cart]);
 	const auto snx = (bra + ket).conjugate();
 	//std::cout << "snx dim: " << snx.rows() << " x " << snx.cols() << "\n";
-	//std::cout << "\nsnx:\n" << snx << "\n\n";
+	std::cout << "\nsnx:\n" << snx << "\n\n";
 	//*/
 
 	/*****************************************************************************
@@ -360,7 +360,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 
 	getline(hgradRe, line);
 	getline(hgradIm, line);
-	//const int size = stoi(line);
+	size = stoi(line);
 	
 	for (int i=0; i<atomNum; i++) {
 		// x
@@ -493,6 +493,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	fnx =  zxnx.transpose();
 	fnx += zynx.transpose();
 	fnx += zznx.transpose();
+	std::cout << "\nFZ nx total:\n" << fnx << "\n\n";
 	Eigen::MatrixXcd zetotnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	zetotnx = zxnx;
 	zetotnx += zynx;
@@ -621,6 +622,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	hnxBig << hnx.conjugate(), Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 		Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hnx.conjugate();
 	fnx += hnxBig.transpose();
+	std::cout << "\nhnx:\n" << hnx << "\n\n";
 
 
 
@@ -1266,13 +1268,13 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//// end to be deleted
 
 
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nfnx AO:\n" << fnx << "\n";
-	//std::cout << "\n\n";
+	std::cout << "\n\n";
+	std::cout << std::fixed << std::setprecision(8) << "\nfnx AO:\n" << fnx << "\n";
+	std::cout << "\n\n";
 	//std::cout << std::fixed << std::setprecision(8) << "\nfnx MO:\n" << fnx2cMO << "\n";
 	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nsnxAO:\n" << snx << "\n";
-	//std::cout << "\n\n";
+	std::cout << std::fixed << std::setprecision(8) << "\nsnxAO:\n" << snx << "\n";
+	std::cout << "\n\n";
 	//std::cout << std::fixed << std::setprecision(8) << "\nsnx2cMO:\n" << snx2cMO << "\n";
 	//std::cout << "\n\n";
 	//std::cout << std::fixed << std::setprecision(8) << "\nc alter:\n" << Calternative << "\n";

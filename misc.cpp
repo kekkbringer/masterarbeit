@@ -271,6 +271,47 @@ void splitBraKet(int atomNum) {
 	if (im.fail()) std::cout << "coulnd not read braket file!\n";
 	std::string lineRe;
 	std::string lineIm;
+	std::string word;
+
+	getline(re, lineRe);
+	getline(im, lineIm);
+	std::istringstream iss(lineRe);
+	iss >> word;
+	const int size = std::stoi(word);
+	
+	const std::string cartDict[] = {"x", "y", "z"};
+
+	for (int I=0; I<atomNum; I++) {
+		for (int J=0; J<atomNum; J++) {
+			for (int alpha=0; alpha<3; alpha++) {
+				for (int beta=0; beta<3; beta++) {
+					//std::cout << I << cartDict[alpha] << " | " << J << cartDict[beta] << "\n";
+					std::ofstream outRe("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta] + ".r");
+					std::ofstream outIm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta] + ".i");
+					outRe << size << "\n";
+					outIm << size << "\n";
+					for (int s=0; s<size*size; s++) {
+						getline(re, lineRe);
+						getline(im, lineIm);
+						outRe << std::setprecision(12) << lineRe << "\n";
+						outIm << std::setprecision(12) << lineIm << "\n";
+					}
+				}
+			}
+		}
+	}
+
+	re.close();
+	im.close();
+}
+
+void splitBraKetold(int atomNum) {
+	std::ifstream re("sbraket.r");
+	std::ifstream im("sbraket.i");
+	if (re.fail()) std::cout << "coulnd not read braket file!\n";
+	if (im.fail()) std::cout << "coulnd not read braket file!\n";
+	std::string lineRe;
+	std::string lineIm;
 
 	getline(re, lineRe);
 	getline(im, lineIm);
@@ -364,5 +405,5 @@ Eigen::MatrixXcd readMatrix(std::string filename) {
 		}
 	}
 
-	return res;
+	return res.conjugate();
 }
