@@ -1335,10 +1335,12 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 		for (int a=nocc; a<spinorSize; a++) {
 			const int index = i*nvirt + a - nocc;
 			b0ai(index) = -fnx2cMO(a, i); // so soll es "eigentlich" sein...
+			//b0ai(index) = -fnx2cMO(i, a);
 			for (int j=0; j<nocc; j++) {
 				//b0ai(index) += snx2cMO(a, j) * fock(j, i);
 			}
 			b0ai(index) += snx2cMO(a, i) * epsilon[i]; // so soll es "eigentlich" sein...
+			//b0ai(index) += snx2cMO(i, a) * epsilon[i];
 			for (int k=0; k<nocc; k++) {
 				for (int l=0; l<nocc; l++) {
 					//b0ai(index) += snx2cMO(k, l) * fourCenterIntegral[a][i][l][k];
