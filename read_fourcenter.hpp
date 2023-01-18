@@ -2,6 +2,7 @@
 
 #include <complex>
 #include <vector>
+#include <string>
 
 typedef std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> fourD;
 
@@ -10,4 +11,4 @@ typedef std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>
 //void readFourcenter(std::complex<double> (&fci)[n][n][n][n]);
 //template <typename fourD>
 //void readFourcenter(fourD &fci);
-fourD readFourcenter();
+fourD readFourcenter(std::string location = "");

@@ -8,14 +8,16 @@
 
 Eigen::VectorXcd cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F) {
 	Eigen::MatrixXcd kek(2*A.rows(), 2*A.rows());
-	kek << A, B,
-	       B.conjugate(), A.conjugate();
+	//kek << A, B,
+	//       B.conjugate(), A.conjugate();
+	kek << A.conjugate(), B.conjugate(),
+	       B, A;
 
 	Eigen::VectorXcd schmon(2*A.rows());
 	schmon << F, F.conjugate();
 
-	//Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> dec(kek);
-	Eigen::LLT<Eigen::MatrixXcd> dec(kek);
+	Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> dec(kek);
+	//Eigen::LLT<Eigen::MatrixXcd> dec(kek);
 	auto u = dec.solve(schmon);
 
 	const auto info = dec.info();
@@ -23,6 +25,8 @@ Eigen::VectorXcd cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F
 		std::cout << "      converged!\n";
 	} else if (info == Eigen::ComputationInfo::NumericalIssue) {
 		std::cout << "      numerical issue! Matrix was not positive definite!\n";
+		//std::cout << "        RETURNING 0-VECTOR!\n\n";
+		//return Eigen::VectorXcd::Zero(2*A.rows());
 	} else if (info == Eigen::ComputationInfo::NoConvergence) {
 		std::cout << "      NOT converged!\n";
 	} else if (info == Eigen::ComputationInfo::InvalidInput) {

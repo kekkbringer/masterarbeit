@@ -4,10 +4,11 @@
 #include <cstring>
 #include <sstream>
 #include <vector>
+#include <string>
 #include <complex>
 #include <iomanip>
 
-fourD readFourcenter() {
+fourD readFourcenter(std::string location) {
 	//std::cout << "\n\n========================================\nreading four center integrals... oh boi...\n";
 
 	// reading coord file to know which atoms occur in which order
@@ -245,8 +246,8 @@ fourD readFourcenter() {
 
 
 	// reading acutal real part
-	std::ifstream re("fourcenter.r");
-	std::ifstream im("fourcenter.i");
+	std::ifstream re(location + "fourcenter.r");
+	std::ifstream im(location + "fourcenter.i");
 	std::string lineIm;
 
 	int i, a, b; // [ij||ab]

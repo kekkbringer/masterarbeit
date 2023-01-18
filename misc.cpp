@@ -336,3 +336,33 @@ Eigen::MatrixXcd readNumSpinor(std::string filename) {
 	}
 	return res;
 }
+
+Eigen::MatrixXcd readMatrix(std::string filename) {
+	using namespace std::complex_literals;
+
+	std::ifstream refile(filename + ".r");
+	std::ifstream imfile(filename + ".i");
+	if (refile.fail() or imfile.fail()) std::cout << "\n\n\nCOUND NOT READ FILE!!!\n\n\n";
+
+	std::string line, word, reline, imline;
+	double re, im;
+
+	getline(refile, line);
+	getline(imfile, line);
+	std::istringstream iss(line);
+	iss >> word; // nlambda
+	const int nlambda = std::stoi(word);
+	iss >> word; // natom * 3 oder so
+	
+	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(nlambda, nlambda);
+
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<nlambda; j++) {
+			getline(refile, reline);
+			getline(imfile, imline);
+			res(i, j) = std::stod(reline) + std::stod(imline) * 1.0i;
+		}
+	}
+
+	return res;
+}

@@ -7,13 +7,17 @@ SANITIZE = #-fsanitize=address,undefined
 ODIR = obj
 
 all: ../bin/polly
+rhf: ../bin/rhf
 
-debug: CFLAGS += -g
-debug: LFLAGS += -g
+debug: CFLAGS += -gdwarf-4 -gstrict-dwarf
+debug: LFLAGS += -gdwarf-4 -gstrict-dwarf
 debug: ../bin/polly
 
 ../bin/polly: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o
 	$(CC) -o ../bin/polly $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(LFLAGS)
+
+../bin/rhf: $(ODIR)/rhf.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o
+	$(CC) -o ../bin/rhf $(ODIR)/rhf.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(LFLAGS)
 
 $(ODIR)/calc_stabmat.o: calc_stabmat.cpp calc_stabmat.hpp
 	$(CC) -c calc_stabmat.cpp -o $(ODIR)/calc_stabmat.o $(CFLAGS) $(SANITIZE)
@@ -41,6 +45,9 @@ $(ODIR)/fci_grad.o: fci_grad.cpp fci_grad.hpp
 
 $(ODIR)/main.o: main.cpp $(ODIR)
 	$(CC) -c main.cpp -o $(ODIR)/main.o $(CFLAGS) $(SANITIZE)
+
+$(ODIR)/rhf.o: rhf.cpp $(ODIR)
+	$(CC) -c rhf.cpp -o $(ODIR)/rhf.o $(CFLAGS) $(SANITIZE)
 
 $(ODIR):
 	[ -d $(ODIR) ] || mkdir -p $(ODIR)
