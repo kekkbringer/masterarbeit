@@ -36,7 +36,7 @@ Eigen::VectorXcd cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F
 	const double relativeError = (kek*u - schmon).norm() / u.norm();
 	std::cout << "      relative error: " << relativeError << "\n";
 
-	std::cout << "\n" << std::flush;
+	std::cout << "CPHF done\n\n" << std::flush;
 	return u;
 }
 

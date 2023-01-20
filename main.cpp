@@ -84,9 +84,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::cout << "\n\n\n\n\n\ndone calculating orbital rotation matrix\n\n\n\n\n\n\n";
+	std::cout << std::flush;
 
 	// split bra ket files
+	std::cout << "\nsplitting sbraket files...\n" << std::flush;
 	splitBraKet(atomNum);
+	std::cout << "done!\n" << std::flush;
 
 	///* calculate actual berry curvature
 	Eigen::MatrixXcd berry(3*atomNum, 3*atomNum);
@@ -99,14 +102,14 @@ int main(int argc, char* argv[]) {
 	Eigen::MatrixXcd berry6(3*atomNum, 3*atomNum);
 	for (int I=0; I<atomNum; I++) {
 		for (int alpha=0; alpha<3; alpha++) {
-			Eigen::MatrixXcd uNumIA;
-			try {
-				auto cplusIA  = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IPlus.out");
-				auto cminusIA = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IMinus.out");
-				auto cnxNumIA = (cplusIA - cminusIA) / 2e-3;
-				uNumIA = spinor.inverse() * cnxNumIA;
-			}
-			catch (...) {}
+			//Eigen::MatrixXcd uNumIA;
+			//try {
+			//	auto cplusIA  = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IPlus.out");
+			//	auto cminusIA = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IMinus.out");
+			//	auto cnxNumIA = (cplusIA - cminusIA) / 2e-3;
+			//	uNumIA = spinor.inverse() * cnxNumIA;
+			//}
+			//catch (...) {}
 
 			//std::cout << "U:\n" << std::fixed << std::setprecision(4) << uNumIA << "\n\n";
 
@@ -152,14 +155,14 @@ int main(int argc, char* argv[]) {
 				for (int beta=0; beta<3; beta++) {
 					//std::cout << "Ia " << I << "_" << alpha << "   Jb " << J << "_" << beta << "\n";
 
-					Eigen::MatrixXcd uNumJB;
-					try {
-						auto cplusJB  = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IPlus.out");
-						auto cminusJB = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IMinus.out");
-						auto cnxNumJB = (cplusJB - cminusJB) / 2e-3;
-						uNumJB = spinor.inverse() * cnxNumJB;
-					}
-					catch (...) {}
+					//Eigen::MatrixXcd uNumJB;
+					//try {
+					//	auto cplusJB  = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IPlus.out");
+					//	auto cminusJB = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IMinus.out");
+					//	auto cnxNumJB = (cplusJB - cminusJB) / 2e-3;
+					//	uNumJB = spinor.inverse() * cnxNumJB;
+					//}
+					//catch (...) {}
 
 					auto uJB = readVector("u" + std::to_string(J) + "_" + std::to_string(beta));
 					//uJB *= -1.0;
@@ -227,13 +230,13 @@ int main(int argc, char* argv[]) {
 						berry(3*I+alpha, 3*J+beta) += braketMO(i, i);
 
 						for (int a=nocc; a<spinorSize; a++) {
-							if (argc<=1) berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uNumIA(a, i));
-							if (argc<=1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uNumJB(a, i);
-							if (argc<=1) berry4(3*I+alpha, 3*J+beta) += std::conj(uNumIA(a, i)) * uNumJB(a, i);
+							//if (argc<=1) berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uNumIA(a, i));
+							//if (argc<=1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uNumJB(a, i);
+							//if (argc<=1) berry4(3*I+alpha, 3*J+beta) += std::conj(uNumIA(a, i)) * uNumJB(a, i);
 							
-							if (argc>1) berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uIA(i*nvirt+a-nocc));
-							if (argc>1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uJB(i*nvirt+a-nocc);
-							if (argc>1) berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
+							/*if (argc>1)*/ berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uIA(i*nvirt+a-nocc));
+							/*if (argc>1)*/ berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uJB(i*nvirt+a-nocc);
+							/*if (argc>1)*/ berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
 							
 							// alternative für oben (nicht ganz)
 							//berry(3*I+alpha, 3*J+beta) += std::conj(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc)) * (snxketJBMO(a, i) + uJB(i*nvirt+a-nocc));
@@ -254,11 +257,11 @@ int main(int argc, char* argv[]) {
 					//std::cout << "\n\n";
 
 					
-					//berry(3*I+alpha, 3*J+beta) *= -2;
-					//berry2(3*I+alpha, 3*J+beta) *= -2;
-					//berry3(3*I+alpha, 3*J+beta) *= -2;
-					//berry4(3*I+alpha, 3*J+beta) *= -2;
-					//berry5(3*I+alpha, 3*J+beta) *= -2;
+					berry(3*I+alpha, 3*J+beta) *= -2;
+					berry2(3*I+alpha, 3*J+beta) *= -2;
+					berry3(3*I+alpha, 3*J+beta) *= -2;
+					berry4(3*I+alpha, 3*J+beta) *= -2;
+					berry5(3*I+alpha, 3*J+beta) *= -2;
 					berry6(3*I+alpha, 3*J+beta) = berry(3*I+alpha, 3*J+beta) + berry2(3*I+alpha, 3*J+beta) + berry3(3*I+alpha, 3*J+beta) + berry4(3*I+alpha, 3*J+beta) + berry5(3*I+alpha, 3*J+beta);
 				}
 			}
@@ -266,45 +269,114 @@ int main(int argc, char* argv[]) {
 	}
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
-	std::cout << "\n\n\nBerry-curvature term 1:\n" << -2.0*berry.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 2:\n" << -2.0*berry2.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 3:\n" << -2.0*berry3.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 4:\n" << -2.0*berry4.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 5:\n" << -2.0*berry5.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature total:\n" <<  -2.0*berry6.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 1:\n" << berry.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature sym:\n" << 0.5*(berry + berry.transpose()).imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature antisym:\n" << 0.5*(berry - berry.transpose()).imag() << "\n\n";
 	//*/
 	
+	std::cout << "================================================================================\n";
 
+	// calculate shielding charges
+	Eigen::MatrixXd chargeFluct = Eigen::MatrixXd::Zero(atomNum, atomNum);
+	for (int I=0; I<atomNum; I++) {
+		for (int J=0; J<atomNum; J++) {
+			// get IJ block from total berry curvature
+			const Eigen::MatrixXd oij = berry6.block<3,3>(3*I, 3*J).imag();
+			//std::cout << "IJ = " << I << "  " << J << "\n";
+			//std::cout << oij << "\n";
+
+			// get antisymmetric part
+			const auto oijas = 0.5*(oij-oij.transpose());
+			//std::cout << "\n" << oijas << "\n";
+
+			//const Eigen::Vector3d omegaij(oijas(2, 1), oijas(0, 2), oijas(1, 0));
+			//std::cout << "\n" << omegaij << "\n";
+
+			chargeFluct(I, J) = oijas(2, 1) * Bx
+					  + oijas(0, 2) * By
+					  + oijas(1, 0) * Bz;
+			chargeFluct(I, J) /= Bnorm * Bnorm;
+			chargeFluct(I, J) *= 2.35051756758e5; // TESLA, ÄNDERE DAS NOCH UNBEDINGT, DU IDIOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		}
+	}
+	std::cout << "\n\ncharge fluctuation:\n" << chargeFluct << "\n\n";
+
+
+	// kurz ins coord file nach den Atomen gucken... :D
+	std::ifstream coord("coord");
+	std::string line, word;
+	std::vector<std::string> atoms;
+	getline(coord, line); //$coord
+	for (int i=0; i<atomNum; i++) {
+		getline(coord, line);
+		std::istringstream iss(line);
+		iss >> word; // x
+		iss >> word; // y
+		iss >> word; // z
+		iss >> word; // atom
+		atoms.push_back(word);
+	}
+	coord.close();
+
+
+	// calculate resulting partial charges
+	std::cout << "\npartial charges:\n";
+	std::cout << "Atom\telec. charge \tnuc. charge\ttotal\n";
+	std::vector<double> partialCharges;
+	double esum=0.0, nsum=0.0;
+	for (int I=0; I<atomNum; I++) {
+		double q = 0.0;
+		for (int J=0; J<atomNum; J++) {
+			q += chargeFluct(I, J);
+		}
+		partialCharges.push_back(q);
+		//std::cout << " " << I+1 << atoms[I] << "\t" << q << "\t" << chargeOf(atoms[I]) << "\t\t" << q+chargeOf(atoms[I]) << "\n";
+		printf(" %u%s\t%10.7f\t%10.7f\t%10.7f\n", I+1, atoms[I].c_str(), q, (double)chargeOf(atoms[I]), q+chargeOf(atoms[I]));
+		esum += q;
+		nsum += chargeOf(atoms[I]);
+	}
+	std::cout << "-----------------------------------------------------\n";
+	//std::cout << " sum\t" << esum << "\t" << nsum << "\t" << esum+nsum << "\n";
+	printf(" sum\t%10.7f\t%10.7f\t%10.7f\n", esum, nsum, esum+nsum);
 
 	/*
-	for (int I=0; I<atomNum; I++) {
-		for (int alpha=0; alpha<3; alpha++) {
-			for (int J=0; J<atomNum; J++) {
-				for (int beta=0; beta<3; beta++) {
-					std::cout << I << " " << alpha << "     " << J << " " << beta << "\n";
+	//for (int I=0; I<atomNum; I++) {
+	//	for (int alpha=0; alpha<3; alpha++) {
+	//		for (int J=0; J<atomNum; J++) {
+	//			for (int beta=0; beta<3; beta++) {
+	//int I = 0;
+	//int J = 0;
+	//int alpha = 0;
+	//int beta = 1;
+					//std::cout << I << " " << alpha << "     " << J << " " << beta << "\n";
 					// doppelt abgeleitete overlap matrix
-					auto braketA = readMatrix("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
-					auto braketB = readMatrix("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
+					auto braketA = readMatrix("bk" + std::to_string(0) + "x" + std::to_string(1) + "y");
+					auto braketB = readMatrix("bk" + std::to_string(0) + "x" + std::to_string(2) + "y");
+					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
+					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
 
 					Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
 					tmp3 << braketA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketA;
 					const auto braketMO = spinor.adjoint() * tmp3 * spinor;
 
-					std::cout << "IaJb AO small real:\n" << std::fixed << std::setprecision(7) << braketA.real() << "\n\n";
+					//std::cout << "IaJb AO small real:\n" << std::fixed << std::setprecision(7) << braketA.real() << "\n\n";
 					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
-					std::cout << "JbIa AO small real:\n" << std::fixed << std::setprecision(7) << braketB.real() << "\n\n";
+					//std::cout << "JbIa AO small real:\n" << std::fixed << std::setprecision(7) << braketB.real() << "\n\n";
 					std::cout << "JbIa AO small imag:\n" << std::fixed << std::setprecision(7) << braketB.imag() << "\n\n";
 					//std::cout << "MO real:\n" << std::fixed << std::setprecision(7) << braketMO.real() << "\n\n";
 					//std::cout << "MO imag:\n" << std::fixed << std::setprecision(7) << braketMO.imag() << "\n\n";
 
 					std::cout << "\n\n\n";
-				}
-			}
-		}
-	}
+	//			}
+	//		}
+	//	}
+	//}
 	//*/
 	
 	/*
@@ -654,12 +726,12 @@ int main(int argc, char* argv[]) {
 			//std::cout << std::fixed << std::setprecision(8) << "bNum:\n" << bNum << "\n";
 			//std::cout << "\n\n";
 			//std::cout << std::fixed << std::setprecision(8) << "b:\n" << b << "\n";
-			//std::cout << "      uNum			uAnalytic\n";
-			//for (int i=0; i<nocc; i++) for (int a=nocc; a<spinorSize; a++) std::cout << std::fixed << std::setprecision(10) << uNum(a, i) << "		" << uIA(i*nvirt + a - nocc) << "\n";
-			//std::cout << "\n\n";
-			std::cout << "      bNum			bAnalytic\n";
-			for (int i=0; i<nocc*nvirt; i++) {std::cout << std::fixed << std::setprecision(10) << bNum(i) << "		" << b(i) << "\n";}
+			std::cout << "      uNum			uAnalytic\n";
+			for (int i=0; i<nocc; i++) for (int a=nocc; a<spinorSize; a++) std::cout << std::fixed << std::setprecision(10) << uNum(a, i) << "		" << uIA(i*nvirt + a - nocc) << "\n";
 			std::cout << "\n\n";
+			//std::cout << "      bNum			bAnalytic\n";
+			//for (int i=0; i<nocc*nvirt; i++) {std::cout << std::fixed << std::setprecision(10) << bNum(i) << "		" << b(i) << "\n";}
+			//std::cout << "\n\n";
 
 			//std::cout << "Num                  Ana\n";
 			//for (int i=0; i<spinorSize; i++) {
@@ -893,5 +965,6 @@ int main(int argc, char* argv[]) {
 	//*/
 	
 
+	std::cout << std::endl;
 	return 0;
 }

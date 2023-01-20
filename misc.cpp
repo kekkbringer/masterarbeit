@@ -19,6 +19,14 @@ int chargeOf(std::string a) {
 		if (a=="o" ) return 8;
 		if (a=="f" ) return 9;
 		if (a=="ne") return 10;
+		if (a=="na") return 11;
+		if (a=="mg") return 12;
+		if (a=="al") return 13;
+		if (a=="si") return 14;
+		if (a=="p" ) return 15;
+		if (a=="s" ) return 16;
+		if (a=="cl") return 17;
+		if (a=="ar") return 18;
 		return 0;
 }
 
@@ -224,6 +232,7 @@ void info(int& atomNumber, int& noccupied, int& nvirtual, double& bfieldx, doubl
 
 
 Eigen::VectorXcd readVector(std::string file) {
+	//std::cout << "READVECTOR CALLED WITH ARG " << file << std::flush;
 	std::ifstream re(file + ".r");
 	std::ifstream im(file + ".i");
 
@@ -244,6 +253,7 @@ Eigen::VectorXcd readVector(std::string file) {
 	re.close();
 	im.close();
 
+	//std::cout << "READVECTOR DONE.\n" << std::flush;
 	return vec;
 }
 
@@ -379,6 +389,7 @@ Eigen::MatrixXcd readNumSpinor(std::string filename) {
 }
 
 Eigen::MatrixXcd readMatrix(std::string filename) {
+	//std::cout << "READMATRIX CALLED WITH ARG " << filename << std::flush;
 	using namespace std::complex_literals;
 
 	std::ifstream refile(filename + ".r");
@@ -401,9 +412,12 @@ Eigen::MatrixXcd readMatrix(std::string filename) {
 		for (int j=0; j<nlambda; j++) {
 			getline(refile, reline);
 			getline(imfile, imline);
-			res(i, j) = std::stod(reline) + std::stod(imline) * 1.0i;
+			//res(i, j) = std::stod(reline) + std::stod(imline) * 1.0i;
+			try {res(i, j) += std::stod(reline);} catch (...) {}
+			try {res(i, j) += 1.0i * std::stod(imline);} catch (...) {}
 		}
 	}
 
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
 	return res.conjugate();
 }

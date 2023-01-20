@@ -17,7 +17,7 @@
 using namespace std::complex_literals;
 
 Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
-	std::cout << "BERRY\n\n" << std::flush;
+	//std::cout << "BERRY\n\n" << std::flush;
 	std::cout << std::setprecision(10);
 
 	//const int nuc = std::stoi(argv[1]);
@@ -159,9 +159,9 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 
 
 	// read smat just for fun and spin zeeman...
-	std::cout << "reading smat...";
+	//std::cout << "reading smat...";
 	const auto smat = readHerm("smat");
-	std::cout << "   done\n";
+	//std::cout << "   done\n";
 	//std::cout << "\nsmat:\n" << smat << "\n\n";
 	
 	/**********************************************************************
@@ -345,7 +345,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	const auto ket = readMatrix("k" + std::to_string(nuc) + cartDict[cart]);
 	const auto snx = (bra + ket).conjugate();
 	//std::cout << "snx dim: " << snx.rows() << " x " << snx.cols() << "\n";
-	std::cout << "\nsnx:\n" << snx << "\n\n";
+	//std::cout << "\nsnx:\n" << snx << "\n\n";
 	//*/
 
 	/*****************************************************************************
@@ -1269,13 +1269,13 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//// end to be deleted
 
 
-	std::cout << "\n\n";
-	std::cout << std::fixed << std::setprecision(8) << "\nfnx AO:\n" << fnx << "\n";
-	std::cout << "\n\n";
+	//std::cout << "\n\n";
+	//std::cout << std::fixed << std::setprecision(8) << "\nfnx AO:\n" << fnx << "\n";
+	//std::cout << "\n\n";
 	//std::cout << std::fixed << std::setprecision(8) << "\nfnx MO:\n" << fnx2cMO << "\n";
 	//std::cout << "\n\n";
-	std::cout << std::fixed << std::setprecision(8) << "\nsnxAO:\n" << snx << "\n";
-	std::cout << "\n\n";
+	//std::cout << std::fixed << std::setprecision(8) << "\nsnxAO:\n" << snx << "\n";
+	//std::cout << "\n\n";
 	//std::cout << std::fixed << std::setprecision(8) << "\nsnx2cMO:\n" << snx2cMO << "\n";
 	//std::cout << "\n\n";
 	//std::cout << std::fixed << std::setprecision(8) << "\nc alter:\n" << Calternative << "\n";
@@ -1354,7 +1354,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//if (cart==1) b0ai(1) = 0.0000684642i;
 	//b0ai = b0ai.conjugate();
 
-	std::cout << std::fixed << std::setprecision(8) << "\nb:\n" << b0ai << "\n";
+	//std::cout << std::fixed << std::setprecision(8) << "\nb:\n" << b0ai << "\n";
 	std::cout << std::defaultfloat;
 	
 	// write b0ai to file
