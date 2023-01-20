@@ -493,7 +493,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	fnx =  zxnx.transpose();
 	fnx += zynx.transpose();
 	fnx += zznx.transpose();
-	std::cout << "\nFZ nx total:\n" << fnx << "\n\n";
+	//std::cout << "\nFZ nx total:\n" << fnx << "\n\n";
 	Eigen::MatrixXcd zetotnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	zetotnx = zxnx;
 	zetotnx += zynx;
@@ -622,7 +622,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	hnxBig << hnx.conjugate(), Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 		Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hnx.conjugate();
 	fnx += hnxBig.transpose();
-	std::cout << "\nhnx:\n" << hnx << "\n\n";
 
 
 
@@ -723,8 +722,10 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 				for (int n=0; n<spinorSize; n++) {
 					C(k, l) += denMat(n, m) * fciD[k][l][m][n];
 					K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
-					Cnx(k, l) += denMat(n, m) * std::conj(fcinxD[k][l][m][n]);
-					Knx(k, l) -= denMat(n, m) * std::conj(fcinxD[k][n][m][l]);
+					//Cnx(k, l) += denMat(n, m) * std::conj(fcinxD[k][l][m][n]);
+					//Knx(k, l) -= denMat(n, m) * std::conj(fcinxD[k][n][m][l]);
+					Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
+					Knx(k, l) -= denMat(n, m) * fcinxD[k][n][m][l];
 				}
 			}
 		}
@@ -735,8 +736,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//std::cout << "exchange:\n" << K << "\n\n";
 	fockSAO += C.transpose();
 	fockSAO += K.transpose();
-	//fnx += Cnx;//.transpose();
-	//fnx += Knx;//.transpose();
+	fnx += Cnx.transpose();
+	fnx += Knx.transpose();
 	const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
 	const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
 	const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
@@ -1337,16 +1338,14 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 		for (int a=nocc; a<spinorSize; a++) {
 			const int index = i*nvirt + a - nocc;
 			b0ai(index) = -fnx2cMO(a, i); // so soll es "eigentlich" sein...
-			//b0ai(index) = -fnx2cMO(i, a);
 			for (int j=0; j<nocc; j++) {
 				//b0ai(index) += snx2cMO(a, j) * fock(j, i);
 			}
 			b0ai(index) += snx2cMO(a, i) * epsilon[i]; // so soll es "eigentlich" sein...
-			//b0ai(index) += snx2cMO(i, a) * epsilon[i];
 			for (int k=0; k<nocc; k++) {
 				for (int l=0; l<nocc; l++) {
-					//b0ai(index) += snx2cMO(k, l) * fourCenterIntegral[a][i][l][k];
-					//b0ai(index) -= snx2cMO(k, l) * fourCenterIntegral[a][k][l][i];
+					b0ai(index) += snx2cMO(k, l) * std::conj(fourCenterIntegral[a][i][l][k]);
+					b0ai(index) -= snx2cMO(k, l) * std::conj(fourCenterIntegral[a][k][l][i]);
 					//b0ai(index) += snx2cMO(k, l) * antisym(a, l, i, k);
 				}
 			}

@@ -266,14 +266,12 @@ int main(int argc, char* argv[]) {
 	}
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
-	std::cout << "\n\n\nBerry-curvature term 1:\n" << 2.0*berry.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 2:\n" << 2.0*berry2.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 3:\n" << 2.0*berry3.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 4:\n" << 2.0*berry4.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 5:\n" << 2.0*berry5.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 5 bra bra:\n" << 2.0*berry5bb.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 5 ket ket:\n" << 2.0*berry5kk.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature total:\n" <<  2.0*berry6.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 1:\n" << -2.0*berry.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 2:\n" << -2.0*berry2.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 3:\n" << -2.0*berry3.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 4:\n" << -2.0*berry4.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 5:\n" << -2.0*berry5.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature total:\n" <<  -2.0*berry6.imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature sym:\n" << 0.5*(berry + berry.transpose()).imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature antisym:\n" << 0.5*(berry - berry.transpose()).imag() << "\n\n";
 	//*/
@@ -287,25 +285,18 @@ int main(int argc, char* argv[]) {
 				for (int beta=0; beta<3; beta++) {
 					std::cout << I << " " << alpha << "     " << J << " " << beta << "\n";
 					// doppelt abgeleitete overlap matrix
-					auto braketA = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
-					auto braketB = readHerm("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
-					// switch lower triangle
-					auto tmpbraket = braketA;
-					for (int i=0; i<spinorSize/2; i++) {
-						for (int j=0; j<i; j++) {
-							braketA(i, j) = braketB(i, j);
-							braketB(i, j) = tmpbraket(i, j);
-						}
-					}
+					auto braketA = readMatrix("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
+					auto braketB = readMatrix("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
+
 					Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
 					tmp3 << braketA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketA;
 					const auto braketMO = spinor.adjoint() * tmp3 * spinor;
 
-					std::cout << "AO small real:\n" << std::fixed << std::setprecision(7) << braketA.real() << "\n\n";
-					std::cout << "AO small real:\n" << std::fixed << std::setprecision(7) << braketB.real() << "\n\n";
-					std::cout << "AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
-					std::cout << "AO small imag:\n" << std::fixed << std::setprecision(7) << braketB.imag() << "\n\n";
+					std::cout << "IaJb AO small real:\n" << std::fixed << std::setprecision(7) << braketA.real() << "\n\n";
+					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
+					std::cout << "JbIa AO small real:\n" << std::fixed << std::setprecision(7) << braketB.real() << "\n\n";
+					std::cout << "JbIa AO small imag:\n" << std::fixed << std::setprecision(7) << braketB.imag() << "\n\n";
 					//std::cout << "MO real:\n" << std::fixed << std::setprecision(7) << braketMO.real() << "\n\n";
 					//std::cout << "MO imag:\n" << std::fixed << std::setprecision(7) << braketMO.imag() << "\n\n";
 
@@ -566,7 +557,7 @@ int main(int argc, char* argv[]) {
 	 *                                             Debug von cnx                                                  *
 	 *************************************************************************************************************/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///*
+	/*
 	for (int I=0; I<atomNum; I++) {
 		for (int alpha=0; alpha<3; alpha++) {
 			std::cout << "\n\n\n\nDebug atom " << I << ", cart " << alpha << "\n\n";
@@ -663,9 +654,9 @@ int main(int argc, char* argv[]) {
 			//std::cout << std::fixed << std::setprecision(8) << "bNum:\n" << bNum << "\n";
 			//std::cout << "\n\n";
 			//std::cout << std::fixed << std::setprecision(8) << "b:\n" << b << "\n";
-			std::cout << "      uNum			uAnalytic\n";
-			for (int i=0; i<nocc; i++) for (int a=nocc; a<spinorSize; a++) std::cout << std::fixed << std::setprecision(10) << uNum(a, i) << "		" << uIA(i*nvirt + a - nocc) << "\n";
-			std::cout << "\n\n";
+			//std::cout << "      uNum			uAnalytic\n";
+			//for (int i=0; i<nocc; i++) for (int a=nocc; a<spinorSize; a++) std::cout << std::fixed << std::setprecision(10) << uNum(a, i) << "		" << uIA(i*nvirt + a - nocc) << "\n";
+			//std::cout << "\n\n";
 			std::cout << "      bNum			bAnalytic\n";
 			for (int i=0; i<nocc*nvirt; i++) {std::cout << std::fixed << std::setprecision(10) << bNum(i) << "		" << b(i) << "\n";}
 			std::cout << "\n\n";
