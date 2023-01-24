@@ -8,6 +8,8 @@
 #include <complex>
 #include <iomanip>
 
+#include <Eigen/Core>
+
 fourD readFourcenter(std::string location) {
 	//std::cout << "\n\n========================================\nreading four center integrals... oh boi...\n";
 
@@ -219,6 +221,38 @@ fourD readFourcenter(std::string location) {
 	}
 
 
+	// generate swap matrix from orbitalIndexMap for later reordering purposes
+	std::cout << "orbitalindexmap:\n";
+	//for (auto x: orbitalIndexMap) {
+	//	for (auto y:x) {
+	//		std::cout << y << "   ";
+	//	}
+	//	std::cout << "\n";
+	//}
+	
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize, sSize+3*pSize+6*dSize+10*fSize);
+	int orbcounter = 0;
+	for (int i=1; i<sSize+pSize+dSize+fSize+1; i++) {
+		for (auto x: orbitalIndexMap[i]) {
+			std::cout << x << "   ";
+			swapMat(orbcounter, x) = 1;
+			orbcounter++;
+		}
+		std::cout << "\n";
+	}
+	//std::cout << "swapmat:\n" << swapMat << "\n\n";
+
+	// save swap matrix to file berryswap.r
+	std::ofstream swapfile;
+	swapfile.open("berryswap.r");
+	swapfile << sSize+3*pSize+6*dSize+10*fSize << "\n";
+	for (int i=0; i<sSize+3*pSize+6*dSize+10*fSize; i++) {
+		for (int j=0; j<sSize+3*pSize+6*dSize+10*fSize; j++) {
+			swapfile << std::fixed << std::setprecision(15) << swapMat(i, j).real() << "\n";
+		}
+	}
+	swapfile.close();
+
 
 	int j=0;
 
@@ -359,10 +393,10 @@ fourD readFourcenter(std::string location) {
 
 
 	// if no d orbitals are present we are done
-	if (dSize == 0) {
-		//std::cout << " no d-orbitals found, no transformation needed.\n";
-		return fci;
-	} // else we need to transform...
+	//if (dSize == 0) {
+	//	//std::cout << " no d-orbitals found, no transformation needed.\n";
+	//	return fci;
+	//} // else we need to transform...
 	
 
 
@@ -426,14 +460,27 @@ fourD readFourcenter(std::string location) {
 		}
 	}
 
+	// save trans matrix to file trans.r
+	std::ofstream transfile;
+	transfile.open("berrytrans.r");
+	transfile << fciSize << "\n";
+	transfile << returnSize << "\n";
+	for (const auto& x: trans) {
+		for (const auto& y: x) {
+			transfile << std::fixed << std::setprecision(15) << y << "\n";
+		}
+	}
+	transfile.close();
+
 	// print trans matrix
-	//std::cout << std::setprecision(1);
+	//std::cout << "trans matrix:\n" << std::setprecision(1);
 	//for (auto x: trans) {
 	//	for (auto y: x) {
 	//		std::cout << y << "  ";
 	//	}
 	//	std::cout << "\n";
 	//}
+	std::cout << std::defaultfloat;
 	//std::cout << "\n" << std::flush;
 
 

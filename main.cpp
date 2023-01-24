@@ -26,6 +26,7 @@
 using namespace std::complex_literals;
 
 int main(int argc, char* argv[]) {
+	const std::string cartDict[] = {"x", "y", "z"};
 	constexpr bool usenum = false;
 
 	int atomNum;
@@ -49,12 +50,12 @@ int main(int argc, char* argv[]) {
 
 	const int spinorSize = nocc + nvirt;
 	
+	///*
 	Eigen::MatrixXcd A;
 	Eigen::MatrixXcd B;
 	calcStabmat(A, B);
 
 	std::cout << "\n\n\n\n\n\ncalculating orbital rotation matrix\n\n\n\n\n\n\n";
-	const std::string cartDict[] = {"x", "y", "z"};
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
 			std::cout << " :: calculating rhs...   ";
@@ -124,8 +125,8 @@ int main(int argc, char* argv[]) {
 			//const auto snxbraIAMO = spinor.adjoint() * tmp1 * spinor;
 			
 			// bra abgeleitete matrix
-			auto snxbraIA = readMatrix("b" + std::to_string(I) + cartDict[alpha]);
-			auto snxketIA = readMatrix("k" + std::to_string(I) + cartDict[alpha]);
+			auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
+			auto snxketIA = readMatrixTransform("k" + std::to_string(I) + cartDict[alpha]);
 			//auto snxbraIA = readHerm("b" + std::to_string(I) + cartDict[alpha]);
 			//auto snxketIA = readHerm("k" + std::to_string(I) + cartDict[alpha]);
 			//// switch lower triangle of snxbra and snxket
@@ -170,8 +171,8 @@ int main(int argc, char* argv[]) {
 					//auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
 					
 					// bra abgeleitete matrix
-					auto snxbraJB = readMatrix("b" + std::to_string(J) + cartDict[beta]);
-					auto snxketJB = readMatrix("k" + std::to_string(J) + cartDict[beta]);
+					auto snxbraJB = readMatrixTransform("b" + std::to_string(J) + cartDict[beta]);
+					auto snxketJB = readMatrixTransform("k" + std::to_string(J) + cartDict[beta]);
 					//auto snxbraJB = readHerm("b" + std::to_string(J) + cartDict[beta]);
 					//auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
 					//// switch lower triangle of snxbra and snxket
@@ -201,7 +202,7 @@ int main(int argc, char* argv[]) {
 					//const auto braketMO = spinor.adjoint() * tmp3 * spinor;
 					
 					// doppelt abgeleitete overlap matrix
-					auto braketA = readMatrix("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
+					auto braketA = readMatrixTransform("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
 					//auto braketA = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
 					//auto braketB = readHerm("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
 					//// switch lower triangle
@@ -234,9 +235,9 @@ int main(int argc, char* argv[]) {
 							//if (argc<=1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uNumJB(a, i);
 							//if (argc<=1) berry4(3*I+alpha, 3*J+beta) += std::conj(uNumIA(a, i)) * uNumJB(a, i);
 							
-							/*if (argc>1)*/ berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uIA(i*nvirt+a-nocc));
-							/*if (argc>1)*/ berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uJB(i*nvirt+a-nocc);
-							/*if (argc>1)*/ berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
+							berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uIA(i*nvirt+a-nocc));
+							berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uJB(i*nvirt+a-nocc);
+							berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
 							
 							// alternative für oben (nicht ganz)
 							//berry(3*I+alpha, 3*J+beta) += std::conj(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc)) * (snxketJBMO(a, i) + uJB(i*nvirt+a-nocc));
@@ -277,7 +278,6 @@ int main(int argc, char* argv[]) {
 	std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature sym:\n" << 0.5*(berry + berry.transpose()).imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature antisym:\n" << 0.5*(berry - berry.transpose()).imag() << "\n\n";
-	//*/
 	
 	std::cout << "================================================================================\n";
 
@@ -343,6 +343,12 @@ int main(int argc, char* argv[]) {
 	std::cout << "-----------------------------------------------------\n";
 	//std::cout << " sum\t" << esum << "\t" << nsum << "\t" << esum+nsum << "\n";
 	printf(" sum\t%10.7f\t%10.7f\t%10.7f\n", esum, nsum, esum+nsum);
+	//*/
+	
+	
+	
+	
+	
 
 	/*
 	//for (int I=0; I<atomNum; I++) {
@@ -385,13 +391,14 @@ int main(int argc, char* argv[]) {
 			std::cout << I << " " << alpha << "\n";
 
 
-			auto snxbraIA = readMatrix("b" + std::to_string(I) + cartDict[alpha]);
+			auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
+			//auto snxbraIA = readMatrix("b" + std::to_string(I) + cartDict[alpha]);
 			std::cout << std::fixed << std::setprecision(6) << "bra real:\n" << snxbraIA.real() << "\n";
 			std::cout << std::fixed << std::setprecision(6) << "bra imag:\n" << snxbraIA.imag() << "\n";
 			std::cout << "\n";
-			auto snxketIA = readMatrix("k" + std::to_string(I) + cartDict[alpha]);
-			std::cout << std::fixed << std::setprecision(6) << "ket real:\n" << snxketIA.real() << "\n";
-			std::cout << std::fixed << std::setprecision(6) << "ket imag:\n" << snxketIA.imag() << "\n";
+			//auto snxketIA = readMatrix("k" + std::to_string(I) + cartDict[alpha]);
+			//std::cout << std::fixed << std::setprecision(6) << "ket real:\n" << snxketIA.real() << "\n";
+			//std::cout << std::fixed << std::setprecision(6) << "ket imag:\n" << snxketIA.imag() << "\n";
 
 			
 

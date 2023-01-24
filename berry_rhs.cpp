@@ -341,8 +341,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	const std::string cartDict[] = {"x", "y", "z"};
 	//const auto bra = readHerm("b" + std::to_string(nuc) + cartDict[cart]);
 	//const auto ket = readHerm("k" + std::to_string(nuc) + cartDict[cart]);
-	const auto bra = readMatrix("b" + std::to_string(nuc) + cartDict[cart]);
-	const auto ket = readMatrix("k" + std::to_string(nuc) + cartDict[cart]);
+	const auto bra = readMatrixTransform("b" + std::to_string(nuc) + cartDict[cart]);
+	const auto ket = readMatrixTransform("k" + std::to_string(nuc) + cartDict[cart]);
 	const auto snx = (bra + ket).conjugate();
 	//std::cout << "snx dim: " << snx.rows() << " x " << snx.cols() << "\n";
 	//std::cout << "\nsnx:\n" << snx << "\n\n";

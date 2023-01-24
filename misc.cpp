@@ -421,3 +421,71 @@ Eigen::MatrixXcd readMatrix(std::string filename) {
 	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
 	return res.conjugate();
 }
+
+Eigen::MatrixXcd readMatrixTransform(std::string filename) {
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXcd transMat = Eigen::MatrixXcd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	//std::cout << transMat.real() << "\n";
+	
+
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+	//std::cout << swapMat.real() << "\n";
+
+	//std::cout << "READMATRIX CALLED WITH ARG " << filename << std::flush;
+	using namespace std::complex_literals;
+
+	std::ifstream refile(filename + ".r");
+	std::ifstream imfile(filename + ".i");
+	if (refile.fail() or imfile.fail()) std::cout << "\n\n\nCOUND NOT READ FILE!!!\n\n\n";
+
+	std::string word, reline, imline;
+	double re, im;
+
+	getline(refile, line);
+	getline(imfile, line);
+	std::istringstream iss(line);
+	iss >> word; // nlambda
+	const int nlambda = std::stoi(word);
+	iss >> word; // natom * 3 oder so
+	
+	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(nlambda, nlambda);
+
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<nlambda; j++) {
+			getline(refile, reline);
+			getline(imfile, imline);
+			//res(i, j) = std::stod(reline) + std::stod(imline) * 1.0i;
+			try {res(i, j) += std::stod(reline);} catch (...) {}
+			try {res(i, j) += 1.0i * std::stod(imline);} catch (...) {}
+		}
+	}
+
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
+	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+}
