@@ -34,6 +34,7 @@ fourD readFourcenter(std::string location) {
 	const int atomNum = atoms.size();
 	//std::cout << "\nnumber of atoms: " << atomNum << "\n";
 
+	std::cout << "\n\nHENLÖ in read_fourcenter!\n\n" << std::flush;
 
 
 	// reading basis set info from 'basis' file
@@ -104,6 +105,8 @@ fourD readFourcenter(std::string location) {
 			}
 		}
 	}
+
+	//std::cout << "\n\nBREAK 1\n\n" << std::flush;
 
 	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize;
 	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize;
@@ -222,7 +225,7 @@ fourD readFourcenter(std::string location) {
 
 
 	// generate swap matrix from orbitalIndexMap for later reordering purposes
-	std::cout << "orbitalindexmap:\n";
+	//std::cout << "orbitalindexmap:\n";
 	//for (auto x: orbitalIndexMap) {
 	//	for (auto y:x) {
 	//		std::cout << y << "   ";
@@ -234,7 +237,7 @@ fourD readFourcenter(std::string location) {
 	int orbcounter = 0;
 	for (int i=1; i<sSize+pSize+dSize+fSize+1; i++) {
 		for (auto x: orbitalIndexMap[i]) {
-			std::cout << x << "   ";
+			//std::cout << x << "   ";
 			swapMat(orbcounter, x) = 1;
 			orbcounter++;
 		}
@@ -257,6 +260,8 @@ fourD readFourcenter(std::string location) {
 	int j=0;
 
 
+	//std::cout << "\n\nBREAK 2\n\n" << std::flush;
+
 
 	// init Four Center Integrals
 	//std::cout << "size of four center integral: Tensor of rank 4 with dimension " << fciSize << "\n";
@@ -265,18 +270,19 @@ fourD readFourcenter(std::string location) {
 				std::vector<std::vector<std::complex<double>>>(fciSize,
 					std::vector<std::complex<double>>(fciSize))));
 
-	bool index[fciSize][fciSize][fciSize][fciSize];
+	//bool index[fciSize][fciSize][fciSize][fciSize];
 
-	for (int i=0; i<fciSize; i++) {
-		for (int j=0; j<fciSize; j++) {
-			for (int k=0; k<fciSize; k++) {
-				for (int l=0; l<fciSize; l++) {
-					index[i][j][k][l] = false;
-				}		
-			}
-		}
-	}
+	//for (int i=0; i<fciSize; i++) {
+	//	for (int j=0; j<fciSize; j++) {
+	//		for (int k=0; k<fciSize; k++) {
+	//			for (int l=0; l<fciSize; l++) {
+	//				index[i][j][k][l] = false;
+	//			}		
+	//		}
+	//	}
+	//}
 
+	//std::cout << "\n\nBREAK 3\n\n" << std::flush;
 
 
 	// reading acutal real part
@@ -319,10 +325,10 @@ fourD readFourcenter(std::string location) {
 						fci[beta][alpha][delta][gamma] = std::complex<double>(valRe, -valIm);
 						fci[delta][gamma][beta][alpha] = std::complex<double>(valRe, -valIm);
 
-						index[alpha][beta][gamma][delta] = true;
-						index[gamma][delta][alpha][beta] = true;
-						index[beta][alpha][delta][gamma] = true;
-						index[delta][gamma][beta][alpha] = true;
+						//index[alpha][beta][gamma][delta] = true;
+						//index[gamma][delta][alpha][beta] = true;
+						//index[beta][alpha][delta][gamma] = true;
+						//index[delta][gamma][beta][alpha] = true;
 					}
 				}
 			}
@@ -331,23 +337,24 @@ fourD readFourcenter(std::string location) {
 	re.close();
 	im.close();
 
+	//std::cout << "\n\nBREAK 4\n\n" << std::flush;
 
-	bool full = true;
-	for (int i=0; i<fciSize; i++) {
-		for (int j=0; j<fciSize; j++) {
-			for (int k=0; k<fciSize; k++) {
-				for (int l=1; l<fciSize; l++) {
-					if(index[i][j][k][l] == false) {
-						full = false;
-						//std::cout << "indecies: " << i << ", " << j << ", " << k << ", " << l << "\n";
-					}
-				}		
-			}
-		}
-	}
-	if (full == false) {
-		std::cout << "\n\nWARNING: fourcenterintegrals was not fully defined!\n\n";
-	}
+	//bool full = true;
+	//for (int i=0; i<fciSize; i++) {
+	//	for (int j=0; j<fciSize; j++) {
+	//		for (int k=0; k<fciSize; k++) {
+	//			for (int l=1; l<fciSize; l++) {
+	//				if(index[i][j][k][l] == false) {
+	//					full = false;
+	//					//std::cout << "indecies: " << i << ", " << j << ", " << k << ", " << l << "\n";
+	//				}
+	//			}		
+	//		}
+	//	}
+	//}
+	//if (full == false) {
+	//	std::cout << "\n\nWARNING: fourcenterintegrals was not fully defined!\n\n";
+	//}
 
 	// reading acutal imag part
 	//std::ifstream im("fourcenter.i");
@@ -503,6 +510,7 @@ fourD readFourcenter(std::string location) {
 				std::vector<std::vector<std::complex<double>>>(fciSize,
 					std::vector<std::complex<double>>(fciSize))));
 
+	//std::cout << "\n\nBREAK 5\n\n" << std::flush;
 
 	// first transformation
 	#pragma omp parallel for collapse(4)
@@ -564,6 +572,7 @@ fourD readFourcenter(std::string location) {
 		}
 	}
 
+	//std::cout << "\n\nBREAK 6\n\n" << std::flush;
 
 
 	return returnfci;
