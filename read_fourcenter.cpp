@@ -34,7 +34,7 @@ fourD readFourcenter(std::string location) {
 	const int atomNum = atoms.size();
 	//std::cout << "\nnumber of atoms: " << atomNum << "\n";
 
-	std::cout << "\n\nHENLÖ in read_fourcenter!\n\n" << std::flush;
+	//std::cout << "\n\nHENLÖ in read_fourcenter!\n\n" << std::flush;
 
 
 	// reading basis set info from 'basis' file

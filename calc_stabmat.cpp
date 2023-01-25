@@ -7,8 +7,10 @@
 #include <vector>
 #include <Eigen/Core>
 #include <iomanip>
+#include <chrono>
+#include <stdio.h>
 
-void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
+Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
     // looking for occupied spinors in control file
 	std::cout << "\n:: reading control file...\n" << std::flush;
 	int nocc = 0;
@@ -106,6 +108,7 @@ void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 	}
 
 
+	auto begin1 = std::chrono::high_resolution_clock::now();
 	//IFDBG std::cout << "\n";
 	std::cout << "      first transformation..." << std::flush;
 	// first transformation
@@ -122,8 +125,12 @@ void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 			}
 		}
 	}
-	std::cout << " done.\n" << std::flush;
+	auto end1 = std::chrono::high_resolution_clock::now();
+	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
+	printf(" done after %.3fs\n", elapsed1.count() * 1e-3);
+	std::cout << std::flush;
 
+	auto begin2 = std::chrono::high_resolution_clock::now();
 	std::cout << "      second transformation..." << std::flush;
 	// second transformation
 	#pragma omp parallel for collapse(4)
@@ -139,8 +146,12 @@ void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 			}
 		}
 	}
-	std::cout << " done.\n" << std::flush;
+	auto end2 = std::chrono::high_resolution_clock::now();
+	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2-begin2);
+	printf(" done after %.3fs\n", elapsed2.count() * 1e-3);
+	std::cout << std::flush;
 
+	auto begin3 = std::chrono::high_resolution_clock::now();
 	std::cout << "      third transformation..." << std::flush;
 	// third transformation
 	#pragma omp parallel for collapse(4)
@@ -156,8 +167,12 @@ void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 			}
 		}
 	}
-	std::cout << " done.\n" << std::flush;
+	auto end3 = std::chrono::high_resolution_clock::now();
+	auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
+	printf(" done after %.3fs\n", elapsed3.count() * 1e-3);
+	std::cout << std::flush;
 
+	auto begin4 = std::chrono::high_resolution_clock::now();
 	std::cout << "      fourth transformation..." << std::flush;
 	// fourth transformation
 	#pragma omp parallel for collapse(4)
@@ -173,7 +188,10 @@ void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 			}
 		}
 	}
-	std::cout << " done.\n" << std::flush;
+	auto end4 = std::chrono::high_resolution_clock::now();
+	auto elapsed4 = std::chrono::duration_cast<std::chrono::milliseconds>(end4-begin4);
+	printf(" done after %.3fs\n", elapsed4.count() * 1e-3);
+	std::cout << std::flush;
 	std::cout << "\n" << std::flush;
 	
 	// end of transformation section
@@ -263,5 +281,25 @@ void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
     cont << "$polly_b_imag        file=polly_b.i\n";
     cont.close();
 
-	std::cout << "\n" << std::flush;
+    std::cout << "\n" << std::flush;
+
+
+    // construct ailkasym
+    static Eigen::VectorXcd ailkasym(nvirt*nocc*nocc*nocc);
+    for (int i=0; i<nocc; i++) {
+	    for (int k=0; k<nocc; k++) {
+		    for (int l=0; l<nocc; l++) {
+			    for (int a=nocc; a<spinorSize; a++) {
+				    const int index = (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i;
+				    //std::cout << index << "  ";
+				    const auto tmp = std::conj(fourCenterIntegral[a][i][l][k] - fourCenterIntegral[a][k][l][i]);
+				    //if (abs(tmp) < 1e-20) continue;
+				    ailkasym(index) = tmp;
+			    }
+			    //std::cout << "\n";
+		    }
+	    }
+    }
+
+    return ailkasym;
 }

@@ -39,8 +39,8 @@ fourD fciAlt(int nuc, int cart) {
 	// reading basis set info from 'basis' file
 	std::ifstream basis("basis");
 	if (basis.fail()) std::cout << "\nWARNING: could not read basis file!\n";
-	std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
-	std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
+	//std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
+	//std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
 
 	std::vector<int> s(atomNum);
 	std::vector<int> p(atomNum);
@@ -419,7 +419,7 @@ fourD fciAlt(int nuc, int cart) {
 		}
 	}
 	if (full == false) {
-		std::cout << "\n\nWARNING: g4c was not correctly defined!\n\n";
+		//std::cout << "\n\nWARNING: g4c was not correctly defined!\n\n";
 	} else {
 		//std::cout << "\n\nATTENTION: g4c might be correct...\n\n";
 	}
@@ -430,7 +430,7 @@ fourD fciAlt(int nuc, int cart) {
 
 	// if no d orbitals are present we are done
 	if (dSize == 0) {
-		std::cout << " no d-orbitals found, no transformation needed.\n";
+		//std::cout << " no d-orbitals found, no transformation needed.\n";
 		return fci;
 	} // else we need to transform...
 	
@@ -439,7 +439,7 @@ fourD fciAlt(int nuc, int cart) {
 	/*****************************************************************************
 	*         transform d orbitals from cartesian to real spherical              *
 	*****************************************************************************/
-	std::cout << " transforming d orbitals from cartesian to real spherical...\n";
+	std::cout << " transforming d orbitals from cartesian to real spherical...\n" << std::flush;
 	constexpr double normZZ   = 1.0/sqrt(12.0);//0.2886751346;//1.0/sqrt(6.0);
 	constexpr double normXXYY = 0.5;//1.0/sqrt(2.0);
 	constexpr double beta = 1.0;//0.655722;

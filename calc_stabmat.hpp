@@ -1,5 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
+#include "read_fourcenter.hpp"
 
-void calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B);
+Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B);

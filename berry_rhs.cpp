@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <chrono>
+#include <stdio.h>
 
 #include "misc.hpp"
 #include "cphf.hpp"
@@ -16,19 +18,20 @@
 
 using namespace std::complex_literals;
 
-Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
+Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd& ailkasym) {
 	//std::cout << "BERRY\n\n" << std::flush;
 	std::cout << std::setprecision(10);
+	const std::string cartDict[] = {"x", "y", "z"};
 
 	//const int nuc = std::stoi(argv[1]);
 	//const int cart = std::stoi(argv[2]);
 
-	std::cout << "currently im only calculating the gradient (dE/dN_x)\n";
+	std::cout << " :: calculating RHS for atom " << nuc+1 << " " << cartDict[cart] << "\n" << std::flush;
 	//const int nuc = 0;
 	//const int cart = 2; // 0=x  1=y  2=z
-	std::cout << "of nuclues:   " << nuc << "        (starting at 0)\n";
-	std::cout << "cart = " << cart << "    (0=x  1=y  2=z)\n";
-	std::cout << "\n\n";
+	//std::cout << "of nuclues:   " << nuc << "        (starting at 0)\n";
+	//std::cout << "cart = " << cart << "    (0=x  1=y  2=z)\n";
+	//std::cout << "\n\n";
 	
 
 	/*****************************************************************************
@@ -173,7 +176,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	 */
 
 	// looking for occupied spinors in control file
-	std::cout << "\n:: reading control file for some additional infos...\n" << std::flush;
+	std::cout << "      reading control file for some additional infos...\n" << std::flush;
 	int nocc = 0;
 	double Bx = 0.0;
 	double By = 0.0;
@@ -209,9 +212,9 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 			Bnorm = std::stod(word);
 		}
 	}
-	std::cout << "   first " << nocc << " spinors are occupied\n";
-	std::cout << "   magnetic field strength: " << Bnorm << "\n";
-	std::cout << "      direction:             " << Bx << "  " << By << "  " << Bz << "\n";
+	//std::cout << "   first " << nocc << " spinors are occupied\n";
+	//std::cout << "   magnetic field strength: " << Bnorm << "\n";
+	//std::cout << "      direction:             " << Bx << "  " << By << "  " << Bz << "\n";
 	// normalize B
 	const double lambda = Bnorm / sqrt(Bx*Bx + By*By + Bz*Bz);
 	Bx *= lambda;
@@ -338,7 +341,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	// construct S_ab^(N_x)
 	// N is in nuc
 	// x is in cart
-	const std::string cartDict[] = {"x", "y", "z"};
 	//const auto bra = readHerm("b" + std::to_string(nuc) + cartDict[cart]);
 	//const auto ket = readHerm("k" + std::to_string(nuc) + cartDict[cart]);
 	const auto bra = readMatrixTransform("b" + std::to_string(nuc) + cartDict[cart]);
@@ -421,7 +423,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	/*****************************************************************************
 	 *                             calculate fock matrix                         *
 	 ****************************************************************************/
-	std::cout << "calculating fock matrix...\n";
+	std::cout << "calculating derivative of fock matrix...\n";
 	std::vector<double> epsilon;
 	auto spinor = readSpinor(epsilon);
 	int spinorSize = spinor.rows();
@@ -508,66 +510,68 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	// ==================================== fourcenter ===================================
 
 	// double dim of fci
-	auto fci = readFourcenter();
+	//auto fci = readFourcenter();
 	//auto fci = fciAlt(nuc, cart, lower, upper);
-	fourD fciD(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
+	//fourD fciD(spinorSize,
+	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
+	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
+	//				std::vector<std::complex<double>>(spinorSize))));
 
-	fourD fciBig(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
+	//fourD fciBig(spinorSize,
+	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
+	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
+	//				std::vector<std::complex<double>>(spinorSize))));
 
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int k=0; k<spinorSize; k++) {
-				for (int l=0; l<spinorSize; l++) {
-					fciD[i][j][k][l] = (0, 0);
-					fciBig[i][j][k][l] = (0, 0);
-				}
-			}
-		}
-	}
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int k=0; k<spinorSize/2; k++) {
-				for (int l=0; l<spinorSize/2; l++) {
-					fciD[i][j][k][l] = fci[i][j][k][l];
-					fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-					fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-					fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//for (int i=0; i<spinorSize; i++) {
+	//	for (int j=0; j<spinorSize; j++) {
+	//		for (int k=0; k<spinorSize; k++) {
+	//			for (int l=0; l<spinorSize; l++) {
+	//				//fciD[i][j][k][l] = (0, 0);
+	//				//fciBig[i][j][k][l] = (0, 0);
+	//			}
+	//		}
+	//	}
+	//}
+	//for (int i=0; i<spinorSize/2; i++) {
+	//	for (int j=0; j<spinorSize/2; j++) {
+	//		for (int k=0; k<spinorSize/2; k++) {
+	//			for (int l=0; l<spinorSize/2; l++) {
+	//				//fciD[i][j][k][l] = fci[i][j][k][l];
+	//				//fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//				//fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+	//				//fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
 
-					// exchange war richtig mit 1, 16, 6, 11
-                                        fciBig[i][j][k][l] = fci[i][j][k][l];
-                                        fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
-                                        fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-				}
-			}
-		}
-	}
+	//				// exchange war richtig mit 1, 16, 6, 11
+        //                                //fciBig[i][j][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//			}
+	//		}
+	//	}
+	//}
 
 
 
 	// fourcenter derivatives in SAO basis
-	std::cout << std::flush << "calculating/reading g4c...\n" << std::flush;
+	std::cout << std::flush << "reading g4c..." << std::flush;
 	const auto fcinx = fciAlt(nuc, cart);
-	std::cout << "done reading!\n\ncalculating 2e part of gradient...\n" << std::flush;
+	std::cout << "  done reading!\n\ncalculating 2e part of gradient...\n" << std::flush;
 
+	auto begin1 = std::chrono::high_resolution_clock::now();
+	std::cout << "define spin components... " << std::flush;
 	// double den kack
 	fourD fcinxD(spinorSize,
 			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
@@ -595,7 +599,9 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 			}
 		}
 	}
-
+	auto end1 = std::chrono::high_resolution_clock::now();
+	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
+	printf(" done after %.3fs\n", elapsed1.count()*1e-3);
 
 	
 
@@ -716,12 +722,14 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//Eigen::MatrixXcd F = hmatBig;
 	//F << hmat, Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 	//	Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hmat;
+	auto begin2 = std::chrono::high_resolution_clock::now();
+	std::cout << "calculating derivative of G..." << std::flush;
 	for (int k=0; k<spinorSize; k++) {
 		for (int l=0; l<spinorSize; l++) {
 			for (int m=0; m<spinorSize; m++) {
 				for (int n=0; n<spinorSize; n++) {
-					C(k, l) += denMat(n, m) * fciD[k][l][m][n];
-					K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
+					//C(k, l) += denMat(n, m) * fciD[k][l][m][n];
+					//K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
 					//Cnx(k, l) += denMat(n, m) * std::conj(fcinxD[k][l][m][n]);
 					//Knx(k, l) -= denMat(n, m) * std::conj(fcinxD[k][n][m][l]);
 					Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
@@ -730,18 +738,24 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 			}
 		}
 	}
+	auto end2 = std::chrono::high_resolution_clock::now();
+	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2-begin2);
+	printf(" done after %.3fs\n", elapsed2.count()*1e-3);
+	std::cout << std::flush;
 
 	//std::cout << "density:\n" << denMat << "\n\n";
 	//std::cout << "coulomb:\n" << C << "\n\n";
 	//std::cout << "exchange:\n" << K << "\n\n";
-	fockSAO += C.transpose();
-	fockSAO += K.transpose();
+	//fockSAO += C.transpose();
+	//fockSAO += K.transpose();
+	std::cout << "updating fock derivative..." << std::flush;
 	fnx += Cnx.transpose();
 	fnx += Knx.transpose();
-	const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
-	const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
+	std::cout << " done.\n" << std::flush;
+	//const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
+	//const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
+	//const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
+	//const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
 	//std::cout << "fock:\n" << fock << "\n\n";
 	//for (int i=0; i<nocc; i++) {
 	//	std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
@@ -751,7 +765,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 
 
 	// calculate energy weighted density matrix W
-	std::cout << "calculating energy weighted density matrix...\n";
+	//std::cout << "calculating energy weighted density matrix...\n";
 	Eigen::MatrixXcd W = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	for (int a=0; a<spinorSize; a++) {
 		for (int b=0; b<spinorSize; b++) {
@@ -762,7 +776,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 			//}
 			for (int i=0; i<nocc; i++) {
 				//W(a, b) += epsilon[i] * std::conj(spinor(a, i)) * spinor(b, i);
-				W(a, b) += fock(i, i) * std::conj(spinor(a, i)) * spinor(b, i);
+				//W(a, b) += fock(i, i) * std::conj(spinor(a, i)) * spinor(b, i);
 			}
 		}
 	}
@@ -777,7 +791,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	/*****************************************************************************
 	 *                              gradient stuff                               *
 	 ****************************************************************************/
-	std::cout << "calculating gradient...\n";
+	//std::cout << "calculating gradient...\n";
 	Eigen::MatrixXcd snxBig(spinorSize, spinorSize);
 	snxBig << snx, Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 		Eigen::MatrixXcd::Zero(matrixSize, matrixSize), snx;
@@ -834,7 +848,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	etot += enuc + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ;
 	//*/
 
-	std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
+	//std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
 	//std::cout << "\n\nalternativer weg:\n";
 	//std::cout << "total:   " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
 	
@@ -1117,7 +1131,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//std::cout << "\n" << std::flush;
 	//*/
 	
-	///*
+	/*
 	fourD xtmp(spinorSize,
 			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
 				std::vector<std::vector<std::complex<double>>>(spinorSize,
@@ -1333,26 +1347,60 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//}
 	//emp2 *= -0.25;
 	//std::cout << "\n\n\nMP2-energy???   " << emp2 << "\n\n";
+	
 
+	// constructing snxVector
+	Eigen::VectorXcd snxVec(nocc*nocc);
+	for (int k=0; k<nocc; k++) {
+		for (int l=0; l<nocc; l++) {
+			snxVec(l + nocc*k) = snx2cMO(k, l);
+		}
+	}
+
+	auto begin = std::chrono::high_resolution_clock::now();
+	std::cout << "putting RHS together..." << std::flush;
+	//for (int i=0; i<nocc; i++) {
+	//	for (int a=nocc; a<spinorSize; a++) {
+	//		const int index = i*nvirt + a - nocc;
+	//		b0ai(index) = -fnx2cMO(a, i); // so soll es "eigentlich" sein...
+	//		for (int j=0; j<nocc; j++) {
+	//			//b0ai(index) += snx2cMO(a, j) * fock(j, i);
+	//		}
+	//		b0ai(index) += snx2cMO(a, i) * epsilon[i]; // so soll es "eigentlich" sein...
+	//		for (int k=0; k<nocc; k++) {
+	//			for (int l=0; l<nocc; l++) {
+	//				b0ai(index) += snx2cMO(k, l) * std::conj(fourCenterIntegral[a][i][l][k]);
+	//				b0ai(index) -= snx2cMO(k, l) * std::conj(fourCenterIntegral[a][k][l][i]);
+	//			}
+	//		}
+	//	}
+	//}
 	for (int i=0; i<nocc; i++) {
 		for (int a=nocc; a<spinorSize; a++) {
 			const int index = i*nvirt + a - nocc;
-			b0ai(index) = -fnx2cMO(a, i); // so soll es "eigentlich" sein...
-			for (int j=0; j<nocc; j++) {
-				//b0ai(index) += snx2cMO(a, j) * fock(j, i);
-			}
-			b0ai(index) += snx2cMO(a, i) * epsilon[i]; // so soll es "eigentlich" sein...
-			for (int k=0; k<nocc; k++) {
-				for (int l=0; l<nocc; l++) {
-					b0ai(index) += snx2cMO(k, l) * std::conj(fourCenterIntegral[a][i][l][k]);
-					b0ai(index) -= snx2cMO(k, l) * std::conj(fourCenterIntegral[a][k][l][i]);
-					//b0ai(index) += snx2cMO(k, l) * antisym(a, l, i, k);
+			b0ai(index) = -fnx2cMO(a, i);
+			b0ai(index) += snx2cMO(a, i) * epsilon[i];
+		}
+	}
+	std::cout << " 1e part done" << std::flush;
+	for (int i=0; i<nocc; i++) {
+		for (int k=0; k<nocc; k++) {
+			for (int l=0; l<nocc; l++) {
+				for (int a=nocc; a<spinorSize; a++) {
+					//b0ai(i*nvirt + a - nocc) += snx2cMO(k, l) * /* std::conj*/(fourCenterIntegral[a][i][l][k]);
+					//b0ai(i*nvirt + a - nocc) -= snx2cMO(k, l) * /* std::conj*/(fourCenterIntegral[a][k][l][i]);
+					
+					//b0ai(i*nvirt + a - nocc) += snx2cMO(k, l) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
+					
+					b0ai(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
 				}
 			}
 		}
 	}
-	//if (cart==1) b0ai(1) = 0.0000684642i;
-	//b0ai = b0ai.conjugate();
+	auto end = std::chrono::high_resolution_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin);
+	printf("    total done after %.3fs\n", elapsed.count()*1e-3);
+	std::cout << std::flush;
 
 	//std::cout << std::fixed << std::setprecision(8) << "\nb:\n" << b0ai << "\n";
 	std::cout << std::defaultfloat;
@@ -1371,6 +1419,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 
 
 
-	std::cout << "\n";
+	std::cout << "done calculating RHS\n\n\n\n" << std::flush;
 	return b0ai;
 }

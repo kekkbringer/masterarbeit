@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <chrono>
 
 #include "misc.hpp"
 #include "cphf.hpp"
@@ -43,7 +44,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "      number of occupied spinors:     " << nocc << "\n";
 	std::cout << "      number of virtual spinors:      " << nvirt << "\n";
 	std::cout << "      strength of magnetic field:     " << Bnorm << "\n";
-	std::cout << "      B field vector:   " << Bx << "   " << By << "   " << Bz << "\n";
+	std::cout << "      B field vector (unscaled):   " << Bx << "   " << By << "   " << Bz << "\n";
 
 	std::vector<double> epsilon;
 	const auto spinor = readSpinor(epsilon);
@@ -51,15 +52,30 @@ int main(int argc, char* argv[]) {
 	const int spinorSize = nocc + nvirt;
 	
 	///*
+	const auto begin1 = std::chrono::high_resolution_clock::now();
 	Eigen::MatrixXcd A;
 	Eigen::MatrixXcd B;
-	calcStabmat(A, B);
+	const auto fciMO = calcStabmat(A, B);
 
-	std::cout << "\n\n\n\n\n\ncalculating orbital rotation matrix\n\n\n\n\n\n\n";
+	//std::cout << "printing fcis in spinor basis, oh boi!\n";
+	//for (auto a: fciMO) {
+	//	for (auto b: a) {
+	//		for (auto c: b) {
+	//			for (auto d: c) {
+	//				std::cout << d << "\n";
+	//			}
+	//		}
+	//	}
+	//}
+	const auto end1 = std::chrono::high_resolution_clock::now();
+
+
+	const auto begin2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\n\ncalculating orbital rotation matrix\n\n";
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
 			std::cout << " :: calculating rhs...   ";
-			const auto b0ai = berryRHS(nuc, cart);
+			const auto b0ai = berryRHS(nuc, cart, fciMO);
 			std::cout << "done!\n";
 
 			std::cout << " :: solving CPHF equation...   ";
@@ -84,9 +100,12 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	std::cout << "\n\n\n\n\n\ndone calculating orbital rotation matrix\n\n\n\n\n\n\n";
+	std::cout << "\n\ndone calculating orbital rotation matrix\n\n";
 	std::cout << std::flush;
+	const auto end2 = std::chrono::high_resolution_clock::now();
 
+
+	const auto begin3 = std::chrono::high_resolution_clock::now();
 	// split bra ket files
 	std::cout << "\nsplitting sbraket files...\n" << std::flush;
 	splitBraKet(atomNum);
@@ -268,6 +287,8 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
+	const auto end3 = std::chrono::high_resolution_clock::now();
+
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
 	std::cout << "\n\n\nBerry-curvature term 1:\n" << berry.imag() << "\n\n";
@@ -346,6 +367,16 @@ int main(int argc, char* argv[]) {
 	//*/
 	
 	
+	// time stats
+	const auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
+	const auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2-begin2);
+	const auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
+	std::cout << "\n\n =================== time stats ===================\n";
+	printf("   Calculate electronic Hessian: %.3fs\n", elapsed1.count()*1e-3);
+	printf("   Calculate CPHF:               %.3fs\n", elapsed2.count()*1e-3);
+	printf("   Calculate Berry-Curvature:    %.3fs\n", elapsed3.count()*1e-3);
+	printf("   --------------------------------------------------------\n");
+	printf("   Total:                        %.3fs\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
 	
 	
 	
