@@ -199,6 +199,7 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 
 
 
+
     /**********************************************************************
 	 *                            CPHF section                            *
 	 **********************************************************************
@@ -282,6 +283,35 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
     cont.close();
 
     std::cout << "\n" << std::flush;
+
+
+
+
+
+	// lets calc mp2 energy
+	std::complex<double> emp2 = 0.0;
+	for (int i=0; i<nocc; i++) {
+		for (int j=0; j<nocc; j++) {
+			for (int a=nocc; a<spinorSize; a++) {
+				for (int b=nocc; b<spinorSize; b++) {
+					std::complex<double> t = (fourCenterIntegral[i][a][j][b] - fourCenterIntegral[i][b][j][a])
+								* (fourCenterIntegral[i][a][j][b] - fourCenterIntegral[i][b][j][a])
+						/ (epsilon[a] + epsilon[b] - epsilon[i] - epsilon[j]);
+					//double t = (fourCenterIntegral[i][b][j][a]) * (fourCenterIntegral[i][b][j][a])
+					//std::cout << "contribution to emp2: " << t << "\n";
+					emp2 += t;
+				}
+			}
+		}
+	}
+	emp2 *= -0.25;
+	std::cout << "\n\n\nMP2-energy???   " << emp2 << "\n\n";
+
+
+
+
+
+
 
 
     // construct ailkasym

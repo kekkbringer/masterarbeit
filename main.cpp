@@ -120,8 +120,11 @@ int main(int argc, char* argv[]) {
 	Eigen::MatrixXcd berry5bb(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry5kk(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry6(3*atomNum, 3*atomNum);
+
+#pragma omp parallel for
 	for (int I=0; I<atomNum; I++) {
 		for (int alpha=0; alpha<3; alpha++) {
+			//std::cout << I << alpha << std::endl;
 			//Eigen::MatrixXcd uNumIA;
 			//try {
 			//	auto cplusIA  = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IPlus.out");
@@ -321,8 +324,9 @@ int main(int argc, char* argv[]) {
 			chargeFluct(I, J) = oijas(2, 1) * Bx
 					  + oijas(0, 2) * By
 					  + oijas(1, 0) * Bz;
-			chargeFluct(I, J) /= Bnorm * Bnorm;
-			chargeFluct(I, J) *= 2.35051756758e5; // TESLA, ÄNDERE DAS NOCH UNBEDINGT, DU IDIOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			//chargeFluct(I, J) /= Bnorm * Bnorm;
+			chargeFluct(I, J) /= Bx*Bx + By*By + Bz*Bz;
+			//chargeFluct(I, J) *= 2.35051756758e5; // TESLA, ÄNDERE DAS NOCH UNBEDINGT, DU IDIOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		}
 	}
 	std::cout << "\n\ncharge fluctuation:\n" << chargeFluct << "\n\n";
@@ -379,6 +383,32 @@ int main(int argc, char* argv[]) {
 	printf("   Total:                        %.3fs\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
 	
 	
+
+
+
+	// f debug
+	//std::cout << "\n\n\nf-Debug" << std::endl;
+	//auto smatSAO = readHerm("smat");
+	//std::cout << std::setprecision(4) << std::fixed << "smatSAO:\n" << smatSAO << "\n";
+	//auto smat = readFDEBUG("smatcao");
+	//std::cout << std::setprecision(4) << std::fixed << "smat:\n" << smat.transpose() << "\n";
+	//auto hmatSAO = readHerm("hmat");
+	//std::cout << std::setprecision(4) << std::fixed << "hmatSAO:\n" << hmatSAO << "\n";
+	//auto hmat = readFDEBUG("hmatcao");
+	//std::cout << std::setprecision(4) << std::fixed << "hmat:\n" << hmat.transpose() << "\n";
+
+	//auto diff = smatSAO - smat.transpose();
+	//std::cout << "diff:\n" << diff << "\n";
+	//std::cout << std::setprecision(20) << diff.cwiseAbs().maxCoeff() << "\n";
+
+	
+			
+	//Eigen::MatrixXcd tmp(spinorSize, spinorSize);
+	//tmp << smat, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+	//Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), smat;
+	//const auto smatMO = spinor.adjoint() * tmp.transpose() * spinor;
+	//std::cout << std::setprecision(6) << std::fixed << "smatMO:\n" << smatMO << "\n";
+
 	
 
 	/*

@@ -462,8 +462,8 @@ fourD readFourcenter(std::string location) {
 			trans[orbitalIndexMap[orb][0]][returnMap[orb][5]] =  1.0 * 0.5 / sqrt(6);
 			trans[orbitalIndexMap[orb][5]][returnMap[orb][5]] = -3.0 * 0.5 / sqrt(6);
 			// f y(3x^2-y^2)                              
-			trans[orbitalIndexMap[orb][3]][returnMap[orb][6]] =  3.0 * 0.5 / sqrt(6);
-			trans[orbitalIndexMap[orb][1]][returnMap[orb][6]] = -1.0 * 0.5 / sqrt(6);
+			trans[orbitalIndexMap[orb][3]][returnMap[orb][6]] =  3.0 * 0.5 / sqrt(6) * -1.0;
+			trans[orbitalIndexMap[orb][1]][returnMap[orb][6]] = -1.0 * 0.5 / sqrt(6) * -1.0;
 		}
 	}
 

@@ -222,10 +222,11 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	Bz *= lambda;
 	if (Bnorm == 0) { Bx=0; By=0; Bz=0; }
 	// TESLA TODO ÄNDERN HIER ACHTUNG, PLS DONT FORGET TO COMMENT THIS OUT, FUTURE IDIOT <=====================================================================================================
-	Bx /= 2.35051756758e5;
-	By /= 2.35051756758e5;
-	Bz /= 2.35051756758e5;
+	//Bx /= 2.35051756758e5;
+	//By /= 2.35051756758e5;
+	//Bz /= 2.35051756758e5;
 	std::cout << "scaled B vector: " << Bx << "  " << By << "  " << Bz << "\n";
+	std::cout << "Bnorm = " << Bnorm << "\n";
 
 	// end of control file section
 	control.close();
@@ -510,58 +511,58 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// ==================================== fourcenter ===================================
 
 	// double dim of fci
-	//auto fci = readFourcenter();
+	auto fci = readFourcenter();
 	//auto fci = fciAlt(nuc, cart, lower, upper);
-	//fourD fciD(spinorSize,
-	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
-	//				std::vector<std::complex<double>>(spinorSize))));
+	fourD fciD(spinorSize,
+			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
+				std::vector<std::vector<std::complex<double>>>(spinorSize,
+					std::vector<std::complex<double>>(spinorSize))));
 
 	//fourD fciBig(spinorSize,
 	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
 	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
 	//				std::vector<std::complex<double>>(spinorSize))));
 
-	//for (int i=0; i<spinorSize; i++) {
-	//	for (int j=0; j<spinorSize; j++) {
-	//		for (int k=0; k<spinorSize; k++) {
-	//			for (int l=0; l<spinorSize; l++) {
-	//				//fciD[i][j][k][l] = (0, 0);
-	//				//fciBig[i][j][k][l] = (0, 0);
-	//			}
-	//		}
-	//	}
-	//}
-	//for (int i=0; i<spinorSize/2; i++) {
-	//	for (int j=0; j<spinorSize/2; j++) {
-	//		for (int k=0; k<spinorSize/2; k++) {
-	//			for (int l=0; l<spinorSize/2; l++) {
-	//				//fciD[i][j][k][l] = fci[i][j][k][l];
-	//				//fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-	//				//fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-	//				//fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	for (int i=0; i<spinorSize; i++) {
+		for (int j=0; j<spinorSize; j++) {
+			for (int k=0; k<spinorSize; k++) {
+				for (int l=0; l<spinorSize; l++) {
+					fciD[i][j][k][l] = (0, 0);
+					//fciBig[i][j][k][l] = (0, 0);
+				}
+			}
+		}
+	}
+	for (int i=0; i<spinorSize/2; i++) {
+		for (int j=0; j<spinorSize/2; j++) {
+			for (int k=0; k<spinorSize/2; k++) {
+				for (int l=0; l<spinorSize/2; l++) {
+					fciD[i][j][k][l] = fci[i][j][k][l];
+					fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+					fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+					fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
 
-	//				// exchange war richtig mit 1, 16, 6, 11
-        //                                //fciBig[i][j][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-	//			}
-	//		}
-	//	}
-	//}
+					// exchange war richtig mit 1, 16, 6, 11
+                                        //fciBig[i][j][k][l] = fci[i][j][k][l];
+                                        //fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
+                                        //fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
+                                        //fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
+                                        //fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
+                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+				}
+			}
+		}
+	}
 
 
 
@@ -728,8 +729,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 		for (int l=0; l<spinorSize; l++) {
 			for (int m=0; m<spinorSize; m++) {
 				for (int n=0; n<spinorSize; n++) {
-					//C(k, l) += denMat(n, m) * fciD[k][l][m][n];
-					//K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
+					C(k, l) += denMat(n, m) * fciD[k][l][m][n];
+					K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
 					//Cnx(k, l) += denMat(n, m) * std::conj(fcinxD[k][l][m][n]);
 					//Knx(k, l) -= denMat(n, m) * std::conj(fcinxD[k][n][m][l]);
 					Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
@@ -746,22 +747,22 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << "density:\n" << denMat << "\n\n";
 	//std::cout << "coulomb:\n" << C << "\n\n";
 	//std::cout << "exchange:\n" << K << "\n\n";
-	//fockSAO += C.transpose();
-	//fockSAO += K.transpose();
+	fockSAO += C.transpose();
+	fockSAO += K.transpose();
 	std::cout << "updating fock derivative..." << std::flush;
 	fnx += Cnx.transpose();
 	fnx += Knx.transpose();
 	std::cout << " done.\n" << std::flush;
-	//const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
-	//const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	//const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	//const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
+	const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
+	const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
+	const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
+	const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
 	//std::cout << "fock:\n" << fock << "\n\n";
-	//for (int i=0; i<nocc; i++) {
-	//	std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
-	//	std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
-	//}
-	//std::cout << "\n";
+	for (int i=0; i<nocc; i++) {
+		std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
+		std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
+	}
+	std::cout << "\n";
 
 
 	// calculate energy weighted density matrix W
@@ -775,7 +776,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 			//	}
 			//}
 			for (int i=0; i<nocc; i++) {
-				//W(a, b) += epsilon[i] * std::conj(spinor(a, i)) * spinor(b, i);
+				W(a, b) += epsilon[i] * std::conj(spinor(a, i)) * spinor(b, i);
 				//W(a, b) += fock(i, i) * std::conj(spinor(a, i)) * spinor(b, i);
 			}
 		}
@@ -848,7 +849,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	etot += enuc + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ;
 	//*/
 
-	//std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
+	std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
 	//std::cout << "\n\nalternativer weg:\n";
 	//std::cout << "total:   " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
 	

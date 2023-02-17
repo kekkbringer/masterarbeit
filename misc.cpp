@@ -7,6 +7,7 @@
 
 #include "misc.hpp"
 #include "read_spinor.hpp"
+#include "read_herm.hpp"
 
 int chargeOf(std::string a) {
 		if (a=="h" ) return 1;
@@ -486,6 +487,55 @@ Eigen::MatrixXcd readMatrixTransform(std::string filename) {
 		}
 	}
 
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
+	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+}
+
+Eigen::MatrixXcd readFDEBUG(std::string filename) {
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXcd transMat = Eigen::MatrixXcd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	//std::cout << transMat.real() << "\n";
+	
+
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+	//std::cout << swapMat.real() << "\n";
+
+	//std::cout << "READMATRIX CALLED WITH ARG " << filename << std::flush;
+	using namespace std::complex_literals;
+
+	auto res = readHerm(filename + ".r", filename + ".i");
+
+	std::cout << "mat dim:   " << res.cols() << " x " << res.rows() << "\n";
+	std::cout << "swap dim:  " << swapMat.cols() << " x " << swapMat.rows() << "\n";
+	std::cout << "trans dim: " << transMat.cols() << " x " << transMat.rows() << "\n";
+	std::cout << std::flush;
+	
 	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
 	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
 }
