@@ -4,6 +4,7 @@
 #include <string>
 
 int chargeOf(std::string a);
+double massOf(std::string a);
 
 void info(int& atomNumber, int& noccupied, int& nvirtual, double& bfieldx, double& bfieldy, double& bfieldz, double& bfieldnorm);
 

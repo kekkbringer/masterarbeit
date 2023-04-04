@@ -16,8 +16,8 @@ Eigen::VectorXcd cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F
 	Eigen::VectorXcd schmon(2*A.rows());
 	schmon << F, F.conjugate();
 
-	Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> dec(kek);
-	//Eigen::LLT<Eigen::MatrixXcd> dec(kek);
+	//Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> dec(kek);
+	Eigen::LLT<Eigen::MatrixXcd> dec(kek);
 	auto u = dec.solve(schmon);
 
 	const auto info = dec.info();

@@ -31,6 +31,28 @@ int chargeOf(std::string a) {
 		return 0;
 }
 
+double massOf(std::string a) {
+		if (a=="h" ) return 1.008;
+		if (a=="he") return 4.0026;
+		if (a=="li") return 6.94;
+		if (a=="be") return 9.0122;
+		if (a=="b" ) return 10.81;
+		if (a=="c" ) return 12.011;
+		if (a=="n" ) return 14.007;
+		if (a=="o" ) return 15.999;
+		if (a=="f" ) return 18.998;
+		if (a=="ne") return 20.180;
+		if (a=="na") return 22.990;
+		if (a=="mg") return 24.305;
+		if (a=="al") return 26.982;
+		if (a=="si") return 28.085;
+		if (a=="p" ) return 30.974;
+		if (a=="s" ) return 32.06;
+		if (a=="cl") return 35.45;
+		if (a=="ar") return 39.948;
+		return 0.0;
+}
+
 void info(int& atomNumber, int& noccupied, int& nvirtual, double& bfieldx, double& bfieldy, double& bfieldz, double& bfieldnorm) {
 	std::vector<double> epsilon;
 	const auto spinor = readSpinor(epsilon);

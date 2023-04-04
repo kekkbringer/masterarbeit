@@ -76,36 +76,36 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 					std::vector<std::complex<double>>(spinorSize))));
 
 	// double dim of fci
-	fourD fciD(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
+	//fourD fciD(spinorSize,
+	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
+	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
+	//				std::vector<std::complex<double>>(spinorSize))));
 
-	std::cout << "      size of new fci:   " << fciD.size() << " x " << fciD.size() << " x " << fciD.size() << " x " << fciD.size() << "\n";
-	std::cout << "      amounts to:        " << (sizeof fciD)*fciD.size()*fciD.size()*fciD.size()*fciD.size()/(1000.0*1000.0) << " MB\n";
-	std::cout << "\n" << std::flush;
+	//std::cout << "      size of new fci:   " << fciD.size() << " x " << fciD.size() << " x " << fciD.size() << " x " << fciD.size() << "\n";
+	//std::cout << "      amounts to:        " << (sizeof fciD)*fciD.size()*fciD.size()*fciD.size()*fciD.size()/(1000.0*1000.0) << " MB\n";
+	//std::cout << "\n" << std::flush;
 
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int k=0; k<spinorSize; k++) {
-				for (int l=0; l<spinorSize; l++) {
-					fciD[i][j][k][l] = (0, 0);
-				}
-			}
-		}
-	}
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int k=0; k<spinorSize/2; k++) {
-				for (int l=0; l<spinorSize/2; l++) {
-					fciD[i][j][k][l] = fci[i][j][k][l];
-					fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-					fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-					fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-				}
-			}
-		}
-	}
+	//for (int i=0; i<spinorSize; i++) {
+	//	for (int j=0; j<spinorSize; j++) {
+	//		for (int k=0; k<spinorSize; k++) {
+	//			for (int l=0; l<spinorSize; l++) {
+	//				fciD[i][j][k][l] = (0, 0);
+	//			}
+	//		}
+	//	}
+	//}
+	//for (int i=0; i<spinorSize/2; i++) {
+	//	for (int j=0; j<spinorSize/2; j++) {
+	//		for (int k=0; k<spinorSize/2; k++) {
+	//			for (int l=0; l<spinorSize/2; l++) {
+	//				fciD[i][j][k][l] = fci[i][j][k][l];
+	//				fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//				fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+	//				fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//			}
+	//		}
+	//	}
+	//}
 
 
 	auto begin1 = std::chrono::high_resolution_clock::now();
@@ -119,7 +119,16 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 				for (int sig=0; sig<spinorSize; sig++) {
 					tmp[i][nu][lam][sig] = 0;
 					for (int mu=0; mu<spinorSize; mu++) {
-						tmp[i][nu][lam][sig] += spinor(mu, i) * fciD[mu][nu][lam][sig];
+						//tmp[i][nu][lam][sig] += spinor(mu, i) * fciD[mu][nu][lam][sig];
+						if (mu<spinorSize/2 and nu<spinorSize/2 and lam<spinorSize/2 and sig<spinorSize/2) {
+							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu][nu][lam][sig];
+						} else if (mu>=spinorSize/2 and nu>=spinorSize/2 and lam<spinorSize/2 and sig<spinorSize/2) {
+							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu-spinorSize/2][nu-spinorSize/2][lam][sig];
+						} else if (mu<spinorSize/2 and nu<spinorSize/2 and lam>=spinorSize/2 and sig>=spinorSize/2) {
+							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu][nu][lam-spinorSize/2][sig-spinorSize/2];
+						} else if (mu>=spinorSize/2 and nu>=spinorSize/2 and lam>=spinorSize/2 and sig>=spinorSize/2) {
+							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu-spinorSize/2][nu-spinorSize/2][lam-spinorSize/2][sig-spinorSize/2];
+						}
 					}
 				}
 			}

@@ -72,17 +72,18 @@ int main(int argc, char* argv[]) {
 
 	const auto begin2 = std::chrono::high_resolution_clock::now();
 	std::cout << "\n\ncalculating orbital rotation matrix\n\n";
+	split1efiles(atomNum);
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
 			std::cout << " :: calculating rhs...   ";
 			const auto b0ai = berryRHS(nuc, cart, fciMO);
 			std::cout << "done!\n";
 
-			std::cout << " :: solving CPHF equation...   ";
+			std::cout << " :: solving CPHF equation...   " << std::flush;
 			const auto u = cphf(A, B, b0ai);
 			//std::cout << "\nU-Vector:\n" << u << "\n\n";
 			std::cout << "done!\n";
-			std::cout << "      saving to disk...   ";
+			std::cout << "      saving to disk...   " << std::flush;
 			saveVector(u, "u" + std::to_string(nuc) + "_" + std::to_string(cart));
 			std::cout << "done!\n";
 
@@ -120,6 +121,8 @@ int main(int argc, char* argv[]) {
 	Eigen::MatrixXcd berry5bb(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry5kk(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry6(3*atomNum, 3*atomNum);
+
+	Eigen::VectorXcd dboc(3*atomNum);
 
 #pragma omp parallel for
 	for (int I=0; I<atomNum; I++) {
@@ -172,6 +175,27 @@ int main(int argc, char* argv[]) {
 			tmp4 << snxketIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxketIA;
 			const auto snxketIAMO = spinor.adjoint() * tmp4 * spinor;
+
+
+			// DBOC section
+			// doppelt abgeleitete overlap matrix
+			auto braketIAIA = readMatrixTransform("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(I) + cartDict[alpha]);
+			Eigen::MatrixXcd tmpDBOC1(spinorSize, spinorSize);
+			tmpDBOC1 << braketIAIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketIAIA;
+			const auto braketDBOC = spinor.adjoint() * tmpDBOC1 * spinor;
+
+			dboc(3*I+alpha) = 0.0;
+			for (int i=0; i<nocc; i++) {
+				dboc(3*I+alpha) += braketDBOC(i, i);
+				for (int r=0; r<spinorSize; r++) {
+					dboc(3*I+alpha) -= abs(snxbraIAMO(i, r)) * abs(snxbraIAMO(i, r));
+				}
+				for (int a=nocc; a<spinorSize; a++) {
+					dboc(3*I+alpha) += abs(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc)) * abs(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc));
+				}
+			}
+			// end of DBOC section
 
 
 			for (int J=0; J<atomNum; J++) {
@@ -369,6 +393,21 @@ int main(int argc, char* argv[]) {
 	//std::cout << " sum\t" << esum << "\t" << nsum << "\t" << esum+nsum << "\n";
 	printf(" sum\t%10.7f\t%10.7f\t%10.7f\n", esum, nsum, esum+nsum);
 	//*/
+	
+	// print DBOC
+	double dboctot = 0.0;
+	std::cout << "\n\nDBOC:\n";
+	for (int I=0; I<atomNum; I++) {
+		std::cout << "  atom " << I+1 << ":\n";
+		std::cout << "    x: " << dboc(3*I + 0)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 0)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
+		std::cout << "    y: " << dboc(3*I + 1)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 1)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
+		std::cout << "    z: " << dboc(3*I + 2)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 2)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
+		dboctot += 	  dboc(3*I + 0).real()/(2*massOf(atoms[I])*1822.8885291649)
+				+ dboc(3*I + 1).real()/(2*massOf(atoms[I])*1822.8885291649)
+				+ dboc(3*I + 2).real()/(2*massOf(atoms[I])*1822.8885291649);
+	}
+	std::cout << "total DBOC = " << dboctot << " H  = " << dboctot*219474.6 << " cm-1";
+	std::cout << "\n\n";
 	
 	
 	// time stats

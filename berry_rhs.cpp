@@ -18,6 +18,175 @@
 
 using namespace std::complex_literals;
 
+void split1efiles(int atomNum) {
+	/*****************************************************************************
+	 *                             overlap and stuff                             *
+	 ****************************************************************************/
+	std::string line;
+	// split sbra and sket files
+	std::cout << "\nsplitting sbra and sket files...";
+	std::ifstream sbraRe("sbra.r");
+	std::ifstream sbraIm("sbra.i");
+	std::ifstream sketRe("sket.r");
+	std::ifstream sketIm("sket.i");
+	if (sbraRe.fail()) std::cout << "\nERROR reading some files!\n";
+	if (sbraIm.fail()) std::cout << "\nERROR reading some files!\n";
+	if (sketRe.fail()) std::cout << "\nERROR reading some files!\n";
+	if (sketIm.fail()) std::cout << "\nERROR reading some files!\n";
+
+	getline(sbraRe, line);
+	getline(sbraIm, line);
+	getline(sketRe, line);
+	getline(sketIm, line);
+	int size = stoi(line);
+	
+	for (int i=0; i<atomNum; i++) {
+		// x
+		std::ofstream brx("b" + std::to_string(i) + "x.r");
+		std::ofstream bix("b" + std::to_string(i) + "x.i");
+		std::ofstream krx("k" + std::to_string(i) + "x.r");
+		std::ofstream kix("k" + std::to_string(i) + "x.i");
+		brx << size << "\n";
+		bix << size << "\n";
+		krx << size << "\n";
+		kix << size << "\n";
+		//for (int i=0; i<size; i++) {
+		for (int i=0; i<size*size; i++) {
+			getline(sbraRe, line);
+			brx << line << "\n";
+			getline(sbraIm, line);
+			bix << line << "\n";
+			getline(sketRe, line);
+			krx << line << "\n";
+			getline(sketIm, line);
+			kix << line << "\n";
+		}
+		brx.close();
+		bix.close();
+		krx.close();
+		kix.close();
+
+		// y
+		std::ofstream bry("b" + std::to_string(i) + "y.r");
+		std::ofstream biy("b" + std::to_string(i) + "y.i");
+		std::ofstream kry("k" + std::to_string(i) + "y.r");
+		std::ofstream kiy("k" + std::to_string(i) + "y.i");
+		bry << size << "\n";
+		biy << size << "\n";
+		kry << size << "\n";
+		kiy << size << "\n";
+		//for (int i=0; i<size; i++) {
+		for (int i=0; i<size*size; i++) {
+			getline(sbraRe, line);
+			bry << line << "\n";
+			getline(sbraIm, line);
+			biy << line << "\n";
+			getline(sketRe, line);
+			kry << line << "\n";
+			getline(sketIm, line);
+			kiy << line << "\n";
+		}
+		bry.close();
+		biy.close();
+		kry.close();
+		kiy.close();
+
+		// z
+		std::ofstream brz("b" + std::to_string(i) + "z.r");
+		std::ofstream biz("b" + std::to_string(i) + "z.i");
+		std::ofstream krz("k" + std::to_string(i) + "z.r");
+		std::ofstream kiz("k" + std::to_string(i) + "z.i");
+		brz << size << "\n";
+		biz << size << "\n";
+		krz << size << "\n";
+		kiz << size << "\n";
+		//for (int i=0; i<size; i++) {
+		for (int i=0; i<size*size; i++) {
+			getline(sbraRe, line);
+			brz << line << "\n";
+			getline(sbraIm, line);
+			biz << line << "\n";
+			getline(sketRe, line);
+			krz << line << "\n";
+			getline(sketIm, line);
+			kiz << line << "\n";
+		}
+		brz.close();
+		biz.close();
+		krz.close();
+		kiz.close();
+	}
+	sbraRe.close();
+	sbraIm.close();
+	sketRe.close();
+	sketIm.close();
+
+	std::cout << "   done\n";
+
+
+	/*****************************************************************************
+	 *                         core hamilton and stuff                           *
+	 ****************************************************************************/
+	// split hgrad files
+	std::cout << "\nsplitting hgrad files...";
+	std::ifstream hgradRe("hgrad.r");
+	std::ifstream hgradIm("hgrad.i");
+	if (hgradRe.fail()) std::cout << "\nERROR reading some files!\n";
+	if (hgradIm.fail()) std::cout << "\nERROR reading some files!\n";
+
+	getline(hgradRe, line);
+	getline(hgradIm, line);
+	size = stoi(line);
+	
+	for (int i=0; i<atomNum; i++) {
+		// x
+		std::ofstream hrx("h" + std::to_string(i) + "x.r");
+		std::ofstream hix("h" + std::to_string(i) + "x.i");
+		hrx << size << "\n";
+		hix << size << "\n";
+		for (int i=0; i<size; i++) {
+			getline(hgradRe, line);
+			hrx << line << "\n";
+			getline(hgradIm, line);
+			hix << line << "\n";
+		}
+		hrx.close();
+		hix.close();
+
+		// y
+		std::ofstream hry("h" + std::to_string(i) + "y.r");
+		std::ofstream hiy("h" + std::to_string(i) + "y.i");
+		hry << size << "\n";
+		hiy << size << "\n";
+		for (int i=0; i<size; i++) {
+			getline(hgradRe, line);
+			hry << line << "\n";
+			getline(hgradIm, line);
+			hiy << line << "\n";
+		}
+		hry.close();
+		hiy.close();
+
+		// z
+		std::ofstream hrz("h" + std::to_string(i) + "z.r");
+		std::ofstream hiz("h" + std::to_string(i) + "z.i");
+		hrz << size << "\n";
+		hiz << size << "\n";
+		for (int i=0; i<size; i++) {
+			getline(hgradRe, line);
+			hrz << line << "\n";
+			getline(hgradIm, line);
+			hiz << line << "\n";
+		}
+		hrz.close();
+		hiz.close();
+	}
+	hgradRe.close();
+	hgradIm.close();
+
+	std::cout << "   done\n";
+}
+
 Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd& ailkasym) {
 	//std::cout << "BERRY\n\n" << std::flush;
 	std::cout << std::setprecision(10);
@@ -235,110 +404,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 
 
 
-	/*****************************************************************************
-	 *                             overlap and stuff                             *
-	 ****************************************************************************/
-	// split sbra and sket files
-	std::cout << "\nsplitting sbra and sket files...";
-	std::ifstream sbraRe("sbra.r");
-	std::ifstream sbraIm("sbra.i");
-	std::ifstream sketRe("sket.r");
-	std::ifstream sketIm("sket.i");
-	if (sbraRe.fail()) std::cout << "\nERROR reading some files!\n";
-	if (sbraIm.fail()) std::cout << "\nERROR reading some files!\n";
-	if (sketRe.fail()) std::cout << "\nERROR reading some files!\n";
-	if (sketIm.fail()) std::cout << "\nERROR reading some files!\n";
 
-	getline(sbraRe, line);
-	getline(sbraIm, line);
-	getline(sketRe, line);
-	getline(sketIm, line);
-	int size = stoi(line);
-	
-	for (int i=0; i<atomNum; i++) {
-		// x
-		std::ofstream brx("b" + std::to_string(i) + "x.r");
-		std::ofstream bix("b" + std::to_string(i) + "x.i");
-		std::ofstream krx("k" + std::to_string(i) + "x.r");
-		std::ofstream kix("k" + std::to_string(i) + "x.i");
-		brx << size << "\n";
-		bix << size << "\n";
-		krx << size << "\n";
-		kix << size << "\n";
-		//for (int i=0; i<size; i++) {
-		for (int i=0; i<size*size; i++) {
-			getline(sbraRe, line);
-			brx << line << "\n";
-			getline(sbraIm, line);
-			bix << line << "\n";
-			getline(sketRe, line);
-			krx << line << "\n";
-			getline(sketIm, line);
-			kix << line << "\n";
-		}
-		brx.close();
-		bix.close();
-		krx.close();
-		kix.close();
-
-		// y
-		std::ofstream bry("b" + std::to_string(i) + "y.r");
-		std::ofstream biy("b" + std::to_string(i) + "y.i");
-		std::ofstream kry("k" + std::to_string(i) + "y.r");
-		std::ofstream kiy("k" + std::to_string(i) + "y.i");
-		bry << size << "\n";
-		biy << size << "\n";
-		kry << size << "\n";
-		kiy << size << "\n";
-		//for (int i=0; i<size; i++) {
-		for (int i=0; i<size*size; i++) {
-			getline(sbraRe, line);
-			bry << line << "\n";
-			getline(sbraIm, line);
-			biy << line << "\n";
-			getline(sketRe, line);
-			kry << line << "\n";
-			getline(sketIm, line);
-			kiy << line << "\n";
-		}
-		bry.close();
-		biy.close();
-		kry.close();
-		kiy.close();
-
-		// z
-		std::ofstream brz("b" + std::to_string(i) + "z.r");
-		std::ofstream biz("b" + std::to_string(i) + "z.i");
-		std::ofstream krz("k" + std::to_string(i) + "z.r");
-		std::ofstream kiz("k" + std::to_string(i) + "z.i");
-		brz << size << "\n";
-		biz << size << "\n";
-		krz << size << "\n";
-		kiz << size << "\n";
-		//for (int i=0; i<size; i++) {
-		for (int i=0; i<size*size; i++) {
-			getline(sbraRe, line);
-			brz << line << "\n";
-			getline(sbraIm, line);
-			biz << line << "\n";
-			getline(sketRe, line);
-			krz << line << "\n";
-			getline(sketIm, line);
-			kiz << line << "\n";
-		}
-		brz.close();
-		biz.close();
-		krz.close();
-		kiz.close();
-	}
-	sbraRe.close();
-	sbraIm.close();
-	sketRe.close();
-	sketIm.close();
-
-	std::cout << "   done\n";
-
-
+	// HIER WAR OVERLAP SPLIT
 	// construct S_ab^(N_x)
 	// N is in nuc
 	// x is in cart
@@ -350,69 +417,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << "snx dim: " << snx.rows() << " x " << snx.cols() << "\n";
 	//std::cout << "\nsnx:\n" << snx << "\n\n";
 	//*/
-
-	/*****************************************************************************
-	 *                         core hamilton and stuff                           *
-	 ****************************************************************************/
-	// split hgrad files
-	std::cout << "\nsplitting hgrad files...";
-	std::ifstream hgradRe("hgrad.r");
-	std::ifstream hgradIm("hgrad.i");
-	if (hgradRe.fail()) std::cout << "\nERROR reading some files!\n";
-	if (hgradIm.fail()) std::cout << "\nERROR reading some files!\n";
-
-	getline(hgradRe, line);
-	getline(hgradIm, line);
-	size = stoi(line);
 	
-	for (int i=0; i<atomNum; i++) {
-		// x
-		std::ofstream hrx("h" + std::to_string(i) + "x.r");
-		std::ofstream hix("h" + std::to_string(i) + "x.i");
-		hrx << size << "\n";
-		hix << size << "\n";
-		for (int i=0; i<size; i++) {
-			getline(hgradRe, line);
-			hrx << line << "\n";
-			getline(hgradIm, line);
-			hix << line << "\n";
-		}
-		hrx.close();
-		hix.close();
-
-		// y
-		std::ofstream hry("h" + std::to_string(i) + "y.r");
-		std::ofstream hiy("h" + std::to_string(i) + "y.i");
-		hry << size << "\n";
-		hiy << size << "\n";
-		for (int i=0; i<size; i++) {
-			getline(hgradRe, line);
-			hry << line << "\n";
-			getline(hgradIm, line);
-			hiy << line << "\n";
-		}
-		hry.close();
-		hiy.close();
-
-		// z
-		std::ofstream hrz("h" + std::to_string(i) + "z.r");
-		std::ofstream hiz("h" + std::to_string(i) + "z.i");
-		hrz << size << "\n";
-		hiz << size << "\n";
-		for (int i=0; i<size; i++) {
-			getline(hgradRe, line);
-			hrz << line << "\n";
-			getline(hgradIm, line);
-			hiz << line << "\n";
-		}
-		hrz.close();
-		hiz.close();
-	}
-	hgradRe.close();
-	hgradIm.close();
-
-	std::cout << "   done\n";
-
+	// UND HIER HAMILTON
 	// construct H_ab^(N_x)
 	// N is in nuc
 	// x is in cart
@@ -618,10 +624,10 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	hmatBig = spinor.adjoint() * hmatBig * spinor;
 
 	// calculate 1e energy
-	std::complex<double> e1 = 0;
-	for (int a=0; a<nocc; a++) {
-		e1 += hmatBig(a, a);
-	}
+	//std::complex<double> e1 = 0;
+	//for (int a=0; a<nocc; a++) {
+	//	e1 += hmatBig(a, a);
+	//}
 	
 
 	// derivative
@@ -637,57 +643,57 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// ==================================== nuc-nuc interaction ===================================
 
 	// calculate electric potential energy of nuclei
-	double enuc = 0.0;
-	for (int i=0; i<atomNum; i++) {
-		for (int j=0; j<atomNum; j++) {
-			if (i==j) continue;
-			enuc += chargeOf(atoms[i]) * chargeOf(atoms[j])
-				/ sqrt(  (coordx[i]-coordx[j])*(coordx[i]-coordx[j])
-				   + (coordy[i]-coordy[j])*(coordy[i]-coordy[j])
-				   + (coordz[i]-coordz[j])*(coordz[i]-coordz[j])  );
-		}
-	}
-	enuc *= 0.5;
+	//double enuc = 0.0;
+	//for (int i=0; i<atomNum; i++) {
+	//	for (int j=0; j<atomNum; j++) {
+	//		if (i==j) continue;
+	//		enuc += chargeOf(atoms[i]) * chargeOf(atoms[j])
+	//			/ sqrt(  (coordx[i]-coordx[j])*(coordx[i]-coordx[j])
+	//			   + (coordy[i]-coordy[j])*(coordy[i]-coordy[j])
+	//			   + (coordz[i]-coordz[j])*(coordz[i]-coordz[j])  );
+	//	}
+	//}
+	//enuc *= 0.5;
 
 
 	// derivatives
-	double enucnx[atomNum][3];
-	// x derivatives
-	for (int a=0; a<atomNum; a++) {
-		enucnx[a][0] = 0.0;
-		for (int b=0; b<atomNum; b++) {
-			if (a==b) continue;
-			double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
-				   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
-				   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
-			enucnx[a][0] += chargeOf(atoms[b]) * (coordx[b] - coordx[a]) / rab3;
-		}
-		enucnx[a][0] *= chargeOf(atoms[a]);
-	}
-	// y derivatives
-	for (int a=0; a<atomNum; a++) {
-		enucnx[a][1] = 0.0;
-		for (int b=0; b<atomNum; b++) {
-			if (a==b) continue;
-			double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
-				   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
-				   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
-			enucnx[a][1] += chargeOf(atoms[b]) * (coordy[b] - coordy[a]) / rab3;
-		}
-		enucnx[a][1] *= chargeOf(atoms[a]);
-	}
-	// z derivatives
-	for (int a=0; a<atomNum; a++) {
-		enucnx[a][2] = 0.0;
-		for (int b=0; b<atomNum; b++) {
-			if (a==b) continue;
-			double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
-				   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
-				   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
-			enucnx[a][2] += chargeOf(atoms[b]) * (coordz[b] - coordz[a]) / rab3;
-		}
-		enucnx[a][2] *= chargeOf(atoms[a]);
-	}
+	//double enucnx[atomNum][3];
+	//// x derivatives
+	//for (int a=0; a<atomNum; a++) {
+	//	enucnx[a][0] = 0.0;
+	//	for (int b=0; b<atomNum; b++) {
+	//		if (a==b) continue;
+	//		double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
+	//			   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
+	//			   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
+	//		enucnx[a][0] += chargeOf(atoms[b]) * (coordx[b] - coordx[a]) / rab3;
+	//	}
+	//	enucnx[a][0] *= chargeOf(atoms[a]);
+	//}
+	//// y derivatives
+	//for (int a=0; a<atomNum; a++) {
+	//	enucnx[a][1] = 0.0;
+	//	for (int b=0; b<atomNum; b++) {
+	//		if (a==b) continue;
+	//		double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
+	//			   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
+	//			   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
+	//		enucnx[a][1] += chargeOf(atoms[b]) * (coordy[b] - coordy[a]) / rab3;
+	//	}
+	//	enucnx[a][1] *= chargeOf(atoms[a]);
+	//}
+	//// z derivatives
+	//for (int a=0; a<atomNum; a++) {
+	//	enucnx[a][2] = 0.0;
+	//	for (int b=0; b<atomNum; b++) {
+	//		if (a==b) continue;
+	//		double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
+	//			   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
+	//			   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
+	//		enucnx[a][2] += chargeOf(atoms[b]) * (coordz[b] - coordz[a]) / rab3;
+	//	}
+	//	enucnx[a][2] *= chargeOf(atoms[a]);
+	//}
 
 	/* print derivatives d(Vnn)/dNx
 	std::cout << "\nderivatives of Vnn:\n";
@@ -729,8 +735,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 		for (int l=0; l<spinorSize; l++) {
 			for (int m=0; m<spinorSize; m++) {
 				for (int n=0; n<spinorSize; n++) {
-					C(k, l) += denMat(n, m) * fciD[k][l][m][n];
-					K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
+					//C(k, l) += denMat(n, m) * fciD[k][l][m][n];
+					//K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
 					//Cnx(k, l) += denMat(n, m) * std::conj(fcinxD[k][l][m][n]);
 					//Knx(k, l) -= denMat(n, m) * std::conj(fcinxD[k][n][m][l]);
 					Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
@@ -747,40 +753,40 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << "density:\n" << denMat << "\n\n";
 	//std::cout << "coulomb:\n" << C << "\n\n";
 	//std::cout << "exchange:\n" << K << "\n\n";
-	fockSAO += C.transpose();
-	fockSAO += K.transpose();
+	//fockSAO += C.transpose();
+	//fockSAO += K.transpose();
 	std::cout << "updating fock derivative..." << std::flush;
 	fnx += Cnx.transpose();
 	fnx += Knx.transpose();
 	std::cout << " done.\n" << std::flush;
-	const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
-	const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
+	//const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
+	//const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
+	//const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
+	//const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
 	//std::cout << "fock:\n" << fock << "\n\n";
-	for (int i=0; i<nocc; i++) {
-		std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
-		std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
-	}
-	std::cout << "\n";
+	//for (int i=0; i<nocc; i++) {
+	//	std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
+	//	std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
+	//}
+	//std::cout << "\n";
 
 
 	// calculate energy weighted density matrix W
 	//std::cout << "calculating energy weighted density matrix...\n";
-	Eigen::MatrixXcd W = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	for (int a=0; a<spinorSize; a++) {
-		for (int b=0; b<spinorSize; b++) {
-			//for (int c=0; c<spinorSize; c++) {
-			//	for (int d=0; d<spinorSize; d++) {
-			//		W(a, b) += denMat(c, a) * fockSAO(c, d) * denMat(b, d);
-			//	}
-			//}
-			for (int i=0; i<nocc; i++) {
-				W(a, b) += epsilon[i] * std::conj(spinor(a, i)) * spinor(b, i);
-				//W(a, b) += fock(i, i) * std::conj(spinor(a, i)) * spinor(b, i);
-			}
-		}
-	}
+	//Eigen::MatrixXcd W = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+	//for (int a=0; a<spinorSize; a++) {
+	//	for (int b=0; b<spinorSize; b++) {
+	//		//for (int c=0; c<spinorSize; c++) {
+	//		//	for (int d=0; d<spinorSize; d++) {
+	//		//		W(a, b) += denMat(c, a) * fockSAO(c, d) * denMat(b, d);
+	//		//	}
+	//		//}
+	//		for (int i=0; i<nocc; i++) {
+	//			W(a, b) += epsilon[i] * std::conj(spinor(a, i)) * spinor(b, i);
+	//			//W(a, b) += fock(i, i) * std::conj(spinor(a, i)) * spinor(b, i);
+	//		}
+	//	}
+	//}
 
 	//std::cout << "fock spinor basis:\n" << fock << "\n\n";
 	//std::cout << "W:\n" << W << "\n\n";
@@ -816,9 +822,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 			//grad += hnxBig(a, b) * denMat(b, a);
 			//grad -= 2.0 * snxBig(a, b) * W(b, a);
 			
-			//grad += W(a, b) * snxBig(a, b);
-			gradW -= W(b, a) * snxBig(a, b);
-			gradF += 0.5 * denMat(b, a) * (fnx(a, b) + hnxBig(a, b) + zetotnx(a, b));
+			//gradW -= W(b, a) * snxBig(a, b);
+			//gradF += 0.5 * denMat(b, a) * (fnx(a, b) + hnxBig(a, b) + zetotnx(a, b));
 
 			//gradHa += denMat(b, a) * hnxBig(a, b);
 			//gradWa -= W(b, a) * snxBig(a, b);
@@ -849,7 +854,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	etot += enuc + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ;
 	//*/
 
-	std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
+	//std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
 	//std::cout << "\n\nalternativer weg:\n";
 	//std::cout << "total:   " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
 	
