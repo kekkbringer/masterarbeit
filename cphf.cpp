@@ -5,8 +5,26 @@
 #include <iomanip>
 
 #include "cphf.hpp"
+#include "davidson.hpp"
 
-Eigen::VectorXcd cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F) {
+//Eigen::VectorXcd cphf(const Eigen::MatrixXcd& A, const Eigen::MatrixXcd& B, const Eigen::VectorXcd& F) {
+std::vector<Eigen::VectorXcd> cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, std::vector<Eigen::VectorXcd> F) {
+	Eigen::MatrixXcd kek(2*A.rows(), 2*A.rows());
+	kek << A.conjugate(), B.conjugate(),
+	       B, A;
+
+	std::vector<Eigen::VectorXcd> b;
+	for (int i=0; i<F.size(); i++) {
+		Eigen::VectorXcd schmon(2*A.rows());
+		schmon << F[i], F[i].conjugate();
+		b.push_back(schmon);
+	}
+	auto uall = davidsonSolve(kek, b, 1e-14);
+
+	return uall;
+}
+
+Eigen::VectorXcd cphfold(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F) {
 	Eigen::MatrixXcd kek(2*A.rows(), 2*A.rows());
 	//kek << A, B,
 	//       B.conjugate(), A.conjugate();
@@ -16,8 +34,8 @@ Eigen::VectorXcd cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, Eigen::VectorXcd F
 	Eigen::VectorXcd schmon(2*A.rows());
 	schmon << F, F.conjugate();
 
-	//Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> dec(kek);
-	Eigen::LLT<Eigen::MatrixXcd> dec(kek);
+	Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> dec(kek);
+	//Eigen::LLT<Eigen::MatrixXcd> dec(kek);
 	auto u = dec.solve(schmon);
 
 	const auto info = dec.info();

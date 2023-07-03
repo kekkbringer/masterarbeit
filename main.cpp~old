@@ -5,7 +5,6 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
-#include <chrono>
 
 #include "misc.hpp"
 #include "cphf.hpp"
@@ -27,7 +26,6 @@
 using namespace std::complex_literals;
 
 int main(int argc, char* argv[]) {
-	const std::string cartDict[] = {"x", "y", "z"};
 	constexpr bool usenum = false;
 
 	int atomNum;
@@ -44,67 +42,51 @@ int main(int argc, char* argv[]) {
 	std::cout << "      number of occupied spinors:     " << nocc << "\n";
 	std::cout << "      number of virtual spinors:      " << nvirt << "\n";
 	std::cout << "      strength of magnetic field:     " << Bnorm << "\n";
-	std::cout << "      B field vector (unscaled):   " << Bx << "   " << By << "   " << Bz << "\n";
+	std::cout << "      B field vector:   " << Bx << "   " << By << "   " << Bz << "\n";
 
 	std::vector<double> epsilon;
 	const auto spinor = readSpinor(epsilon);
 
 	const int spinorSize = nocc + nvirt;
 	
-	///*
-	const auto begin1 = std::chrono::high_resolution_clock::now();
-	Eigen::MatrixXcd A, B;
-	const auto fciMO = calcStabmat(A, B);
+	Eigen::MatrixXcd A;
+	Eigen::MatrixXcd B;
+	calcStabmat(A, B);
 
-	//std::cout << "printing fcis in spinor basis, oh boi!\n";
-	//for (auto a: fciMO) {
-	//	for (auto b: a) {
-	//		for (auto c: b) {
-	//			for (auto d: c) {
-	//				std::cout << d << "\n";
-	//			}
-	//		}
-	//	}
-	//}
-	const auto end1 = std::chrono::high_resolution_clock::now();
-
-
-	const auto begin2 = std::chrono::high_resolution_clock::now();
-	std::cout << "\n\ncalculating orbital rotation matrix\n\n";
-	std::vector<Eigen::VectorXcd> ball;
-	split1efiles(atomNum);
+	std::cout << "\n\n\n\n\n\ncalculating orbital rotation matrix\n\n\n\n\n\n\n";
+	const std::string cartDict[] = {"x", "y", "z"};
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
 			std::cout << " :: calculating rhs...   ";
-			const auto b0ai = berryRHS(nuc, cart, fciMO);
-			ball.push_back(b0ai);
+			const auto b0ai = berryRHS(nuc, cart);
 			std::cout << "done!\n";
+
+			std::cout << " :: solving CPHF equation...   ";
+			const auto u = cphf(A, B, b0ai);
+			//std::cout << "\nU-Vector:\n" << u << "\n\n";
+			std::cout << "done!\n";
+			std::cout << "      saving to disk...   ";
+			saveVector(u, "u" + std::to_string(nuc) + "_" + std::to_string(cart));
+			std::cout << "done!\n";
+
+			// TBD
+			//Eigen::MatrixXcd U = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+			//for (int i=0; i<nocc; i++) {
+			//	for (int a=nocc; a<spinorSize; a++) {
+			//		U(a, i) = u(i*nvirt+a-nocc);
+			//	}
+			//}
+			//std::cout << "\nU:\n" << U << "\n\n";
+
+			//auto snxbra = readHerm("b" + std::to_string(nuc) + cartDict[cart]);
+			//auto snxket = readHerm("k" + std::to_string(nuc) + cartDict[cart]);
 		}
 	}
 
-	std::cout << " :: solving CPHF equation...   " << std::flush;
-	const auto u = cphf(A, B, ball);
-	std::cout << "done!\n";
-	std::cout << "      saving to disk...   " << std::flush;
-	int ind=0;
-	for (int nuc=0; nuc<atomNum; nuc++) {
-		for (int cart=0; cart<3; cart++) {
-			saveVector(u[ind], "u" + std::to_string(nuc) + "_" + std::to_string(cart));
-			ind++;
-		}
-	}
-	std::cout << "done!\n";
+	std::cout << "\n\n\n\n\n\ndone calculating orbital rotation matrix\n\n\n\n\n\n\n";
 
-	std::cout << "\n\ndone calculating orbital rotation matrix\n\n";
-	std::cout << std::flush;
-	const auto end2 = std::chrono::high_resolution_clock::now();
-
-
-	const auto begin3 = std::chrono::high_resolution_clock::now();
 	// split bra ket files
-	std::cout << "\nsplitting sbraket files...\n" << std::flush;
 	splitBraKet(atomNum);
-	std::cout << "done!\n" << std::flush;
 
 	///* calculate actual berry curvature
 	Eigen::MatrixXcd berry(3*atomNum, 3*atomNum);
@@ -112,24 +94,17 @@ int main(int argc, char* argv[]) {
 	Eigen::MatrixXcd berry3(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry4(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry5(3*atomNum, 3*atomNum);
-	Eigen::MatrixXcd berry5bb(3*atomNum, 3*atomNum);
-	Eigen::MatrixXcd berry5kk(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry6(3*atomNum, 3*atomNum);
-
-	Eigen::VectorXcd dboc(3*atomNum);
-
-#pragma omp parallel for
 	for (int I=0; I<atomNum; I++) {
 		for (int alpha=0; alpha<3; alpha++) {
-			//std::cout << I << alpha << std::endl;
-			//Eigen::MatrixXcd uNumIA;
-			//try {
-			//	auto cplusIA  = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IPlus.out");
-			//	auto cminusIA = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IMinus.out");
-			//	auto cnxNumIA = (cplusIA - cminusIA) / 2e-3;
-			//	uNumIA = spinor.inverse() * cnxNumIA;
-			//}
-			//catch (...) {}
+			Eigen::MatrixXcd uNumIA;
+			try {
+				auto cplusIA  = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IPlus.out");
+				auto cminusIA = readNumSpinor("TEST5/" + std::to_string(3*I+alpha+1) + "IMinus.out");
+				auto cnxNumIA = (cplusIA - cminusIA) / 2e-3;
+				uNumIA = spinor.inverse() * cnxNumIA;
+			}
+			catch (...) {}
 
 			//std::cout << "U:\n" << std::fixed << std::setprecision(4) << uNumIA << "\n\n";
 
@@ -144,66 +119,41 @@ int main(int argc, char* argv[]) {
 			//const auto snxbraIAMO = spinor.adjoint() * tmp1 * spinor;
 			
 			// bra abgeleitete matrix
-			auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
-			auto snxketIA = readMatrixTransform("k" + std::to_string(I) + cartDict[alpha]);
-			//auto snxbraIA = readHerm("b" + std::to_string(I) + cartDict[alpha]);
-			//auto snxketIA = readHerm("k" + std::to_string(I) + cartDict[alpha]);
-			//// switch lower triangle of snxbra and snxket
-			//auto tmpbraIA = snxbraIA;
-			//for (int i=0; i<spinorSize/2; i++) {
-			//	for (int j=0; j<i; j++) {
-			//		snxbraIA(i, j) = snxketIA(i, j);
-			//		snxketIA(i, j) = tmpbraIA(i, j);
-			//	}
-			//}
-			
+			auto snxbraIA = readHerm("b" + std::to_string(I) + cartDict[alpha]);
+			auto snxketIA = readHerm("k" + std::to_string(I) + cartDict[alpha]);
+			// switch lower triangle of snxbra and snxket
+			auto tmpbraIA = snxbraIA;
+			for (int i=0; i<spinorSize/2; i++) {
+				for (int j=0; j<i; j++) {
+					snxbraIA(i, j) = snxketIA(i, j);
+					snxketIA(i, j) = tmpbraIA(i, j);
+				}
+			}
 			Eigen::MatrixXcd tmp1(spinorSize, spinorSize);
 			tmp1 << snxbraIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbraIA;
 			const auto snxbraIAMO = spinor.adjoint() * tmp1 * spinor;
 
-			////std::cout << "snxBraIAMO:\n" << std::fixed << std::setprecision(4) << snxbraIAMO << "\n\n";
+			//std::cout << "snxBraIAMO:\n" << std::fixed << std::setprecision(4) << snxbraIAMO << "\n\n";
 
-			//// test stuff
+			// test stuff
 			Eigen::MatrixXcd tmp4(spinorSize, spinorSize);
 			tmp4 << snxketIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxketIA;
 			const auto snxketIAMO = spinor.adjoint() * tmp4 * spinor;
 
-
-			// DBOC section
-			// doppelt abgeleitete overlap matrix
-			auto braketIAIA = readMatrixTransform("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(I) + cartDict[alpha]);
-			Eigen::MatrixXcd tmpDBOC1(spinorSize, spinorSize);
-			tmpDBOC1 << braketIAIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketIAIA;
-			const auto braketDBOC = spinor.adjoint() * tmpDBOC1 * spinor;
-
-			dboc(3*I+alpha) = 0.0;
-			for (int i=0; i<nocc; i++) {
-				dboc(3*I+alpha) += braketDBOC(i, i);
-				for (int r=0; r<spinorSize; r++) {
-					dboc(3*I+alpha) -= abs(snxbraIAMO(i, r)) * abs(snxbraIAMO(i, r));
-				}
-				for (int a=nocc; a<spinorSize; a++) {
-					dboc(3*I+alpha) += abs(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc)) * abs(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc));
-				}
-			}
-			// end of DBOC section
-
-
 			for (int J=0; J<atomNum; J++) {
 				for (int beta=0; beta<3; beta++) {
 					//std::cout << "Ia " << I << "_" << alpha << "   Jb " << J << "_" << beta << "\n";
 
-					//Eigen::MatrixXcd uNumJB;
-					//try {
-					//	auto cplusJB  = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IPlus.out");
-					//	auto cminusJB = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IMinus.out");
-					//	auto cnxNumJB = (cplusJB - cminusJB) / 2e-3;
-					//	uNumJB = spinor.inverse() * cnxNumJB;
-					//}
-					//catch (...) {}
+					Eigen::MatrixXcd uNumJB;
+					try {
+						auto cplusJB  = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IPlus.out");
+						auto cminusJB = readNumSpinor("TEST5/" + std::to_string(3*J+beta+1) + "IMinus.out");
+						auto cnxNumJB = (cplusJB - cminusJB) / 2e-3;
+						uNumJB = spinor.inverse() * cnxNumJB;
+					}
+					catch (...) {}
 
 					auto uJB = readVector("u" + std::to_string(J) + "_" + std::to_string(beta));
 					//uJB *= -1.0;
@@ -211,19 +161,16 @@ int main(int argc, char* argv[]) {
 					//auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
 					
 					// bra abgeleitete matrix
-					auto snxbraJB = readMatrixTransform("b" + std::to_string(J) + cartDict[beta]);
-					auto snxketJB = readMatrixTransform("k" + std::to_string(J) + cartDict[beta]);
-					//auto snxbraJB = readHerm("b" + std::to_string(J) + cartDict[beta]);
-					//auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
-					//// switch lower triangle of snxbra and snxket
-					//const auto tmpbraJB = snxbraJB;
-					//for (int i=0; i<spinorSize/2; i++) {
-					//	for (int j=0; j<i; j++) {
-					//		snxbraJB(i, j) = snxketJB(i, j);
-					//		snxketJB(i, j) = tmpbraJB(i, j);
-					//	}
-					//}
-					
+					auto snxbraJB = readHerm("b" + std::to_string(J) + cartDict[beta]);
+					auto snxketJB = readHerm("k" + std::to_string(J) + cartDict[beta]);
+					// switch lower triangle of snxbra and snxket
+					const auto tmpbraJB = snxbraJB;
+					for (int i=0; i<spinorSize/2; i++) {
+						for (int j=0; j<i; j++) {
+							snxbraJB(i, j) = snxketJB(i, j);
+							snxketJB(i, j) = tmpbraJB(i, j);
+						}
+					}
 					Eigen::MatrixXcd tmp2(spinorSize, spinorSize);
 					tmp2 << snxketJB, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxketJB;
@@ -233,7 +180,6 @@ int main(int argc, char* argv[]) {
 					tmpa << snxbraJB, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbraJB;
 					const auto snxbraJBMO = spinor.adjoint() * tmpa * spinor;
-					
 
 					//const auto braket = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
 					//Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
@@ -242,21 +188,21 @@ int main(int argc, char* argv[]) {
 					//const auto braketMO = spinor.adjoint() * tmp3 * spinor;
 					
 					// doppelt abgeleitete overlap matrix
-					auto braketA = readMatrixTransform("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
-					//auto braketA = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
-					//auto braketB = readHerm("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
-					//// switch lower triangle
-					//auto tmpbraket = braketA;
-					//for (int i=0; i<spinorSize/2; i++) {
-					//	for (int j=0; j<i; j++) {
-					//		braketA(i, j) = braketB(i, j);
-					//		braketB(i, j) = tmpbraket(i, j);
-					//	}
-					//}
+					auto braketA = readHerm("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
+					auto braketB = readHerm("bk" + std::to_string(J) + cartDict[beta] + std::to_string(I) + cartDict[alpha]);
+					// switch lower triangle
+					auto tmpbraket = braketA;
+					for (int i=0; i<spinorSize/2; i++) {
+						for (int j=0; j<i; j++) {
+							braketA(i, j) = braketB(i, j);
+							braketB(i, j) = tmpbraket(i, j);
+						}
+					}
 					Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
 					tmp3 << braketA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketA;
 					const auto braketMO = spinor.adjoint() * tmp3 * spinor;
+
 
 
 					berry(3*I+alpha, 3*J+beta) = 0.0;
@@ -264,29 +210,24 @@ int main(int argc, char* argv[]) {
 					berry3(3*I+alpha, 3*J+beta) = 0.0;
 					berry4(3*I+alpha, 3*J+beta) = 0.0;
 					berry5(3*I+alpha, 3*J+beta) = 0.0;
-					//berry5bb(3*I+alpha, 3*J+beta) = 0.0;
-					//berry5kk(3*I+alpha, 3*J+beta) = 0.0;
 					berry6(3*I+alpha, 3*J+beta) = 0.0;
 					for (int i=0; i<nocc; i++) {
 						berry(3*I+alpha, 3*J+beta) += braketMO(i, i);
 
 						for (int a=nocc; a<spinorSize; a++) {
-							//if (argc<=1) berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uNumIA(a, i));
-							//if (argc<=1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uNumJB(a, i);
-							//if (argc<=1) berry4(3*I+alpha, 3*J+beta) += std::conj(uNumIA(a, i)) * uNumJB(a, i);
+							if (argc<=1) berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uNumIA(a, i));
+							if (argc<=1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uNumJB(a, i);
+							if (argc<=1) berry4(3*I+alpha, 3*J+beta) += std::conj(uNumIA(a, i)) * uNumJB(a, i);
 							
-							berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * std::conj(uIA(i*nvirt+a-nocc));
-							berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uJB(i*nvirt+a-nocc);
-							berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
+							if (argc>1) berry2(3*I+alpha, 3*J+beta) += snxketJBMO(a, i) * uIA(i*nvirt+a-nocc + nocc*nvirt);
+							if (argc>1) berry3(3*I+alpha, 3*J+beta) += snxbraIAMO(i, a) * uJB(i*nvirt+a-nocc);
+							if (argc>1) berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
 							
 							// alternative für oben (nicht ganz)
 							//berry(3*I+alpha, 3*J+beta) += std::conj(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc)) * (snxketJBMO(a, i) + uJB(i*nvirt+a-nocc));
 						}
 						for (int j=0; j<nocc; j++) {
 							berry5(3*I+alpha, 3*J+beta) -= snxbraIAMO(i, j) * snxketJBMO(j, i);
-							//berry5bb(3*I+alpha, 3*J+beta) -= snxbraIAMO(i, j) * std::conj(snxbraJBMO(i, j));
-							//berry5kk(3*I+alpha, 3*J+beta) -= std::conj(snxketIAMO(j, i)) * snxketJBMO(j, i);
-							//std::cout << "term 5 -= " << snxbraIAMO(i, j) << "  *  " <<  snxketJBMO(j, i) << "  =  " << snxbraIAMO(i, j) * snxketJBMO(j, i) << "\n";
 						}
 						// alternative (wegen oben)
 						//for (int r=0; r<spinorSize; r++) {
@@ -295,231 +236,39 @@ int main(int argc, char* argv[]) {
 					}
 
 					//std::cout << "Term3 = " << berry3(3*I+alpha, 3*J+beta) << "\n\n";
-					//std::cout << "\n\n";
 
 					
-					berry(3*I+alpha, 3*J+beta) *= -2;
-					berry2(3*I+alpha, 3*J+beta) *= -2;
-					berry3(3*I+alpha, 3*J+beta) *= -2;
-					berry4(3*I+alpha, 3*J+beta) *= -2;
-					berry5(3*I+alpha, 3*J+beta) *= -2;
+					//berry(3*I+alpha, 3*J+beta) *= -2;
+					//berry2(3*I+alpha, 3*J+beta) *= -2;
+					//berry3(3*I+alpha, 3*J+beta) *= -2;
+					//berry4(3*I+alpha, 3*J+beta) *= -2;
+					//berry5(3*I+alpha, 3*J+beta) *= -2;
 					berry6(3*I+alpha, 3*J+beta) = berry(3*I+alpha, 3*J+beta) + berry2(3*I+alpha, 3*J+beta) + berry3(3*I+alpha, 3*J+beta) + berry4(3*I+alpha, 3*J+beta) + berry5(3*I+alpha, 3*J+beta);
 				}
 			}
 		}
 	}
-	const auto end3 = std::chrono::high_resolution_clock::now();
-
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
-	std::cout << "\n\n\nBerry-curvature term 1:\n" << berry.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 1:\n" << 2.0*berry.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 2:\n" << 2.0*berry2.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 3:\n" << 2.0*berry3.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 4:\n" << 2.0*berry4.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 5:\n" << 2.0*berry5.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature total:\n" <<  2.0*berry6.imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature sym:\n" << 0.5*(berry + berry.transpose()).imag() << "\n\n";
 	//std::cout << "\n\n\nBerry-curvature antisym:\n" << 0.5*(berry - berry.transpose()).imag() << "\n\n";
-	
-	std::cout << "================================================================================\n";
-
-	// calculate shielding charges
-	Eigen::MatrixXd chargeFluct = Eigen::MatrixXd::Zero(atomNum, atomNum);
-	for (int I=0; I<atomNum; I++) {
-		for (int J=0; J<atomNum; J++) {
-			// get IJ block from total berry curvature
-			const Eigen::MatrixXd oij = berry6.block<3,3>(3*I, 3*J).imag();
-			//std::cout << "IJ = " << I << "  " << J << "\n";
-			//std::cout << oij << "\n";
-
-			// get antisymmetric part
-			const auto oijas = 0.5*(oij-oij.transpose());
-			//std::cout << "\n" << oijas << "\n";
-
-			//const Eigen::Vector3d omegaij(oijas(2, 1), oijas(0, 2), oijas(1, 0));
-			//std::cout << "\n" << omegaij << "\n";
-
-			chargeFluct(I, J) = oijas(2, 1) * Bx
-					  + oijas(0, 2) * By
-					  + oijas(1, 0) * Bz;
-			//chargeFluct(I, J) /= Bnorm * Bnorm;
-			chargeFluct(I, J) /= Bx*Bx + By*By + Bz*Bz;
-			//chargeFluct(I, J) *= 2.35051756758e5; // TESLA, ÄNDERE DAS NOCH UNBEDINGT, DU IDIOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		}
-	}
-	std::cout << "\n\ncharge fluctuation:\n" << chargeFluct << "\n\n";
-
-
-	// kurz ins coord file nach den Atomen gucken... :D
-	std::ifstream coord("coord");
-	std::string line, word;
-	std::vector<std::string> atoms;
-	getline(coord, line); //$coord
-	for (int i=0; i<atomNum; i++) {
-		getline(coord, line);
-		std::istringstream iss(line);
-		iss >> word; // x
-		iss >> word; // y
-		iss >> word; // z
-		iss >> word; // atom
-		atoms.push_back(word);
-	}
-	coord.close();
-
-
-	// calculate resulting partial charges
-	std::cout << "\npartial charges:\n";
-	std::cout << "Atom\telec. charge \tnuc. charge\ttotal\n";
-	std::vector<double> partialCharges;
-	double esum=0.0, nsum=0.0;
-	for (int I=0; I<atomNum; I++) {
-		double q = 0.0;
-		for (int J=0; J<atomNum; J++) {
-			q += chargeFluct(I, J);
-		}
-		partialCharges.push_back(q);
-		//std::cout << " " << I+1 << atoms[I] << "\t" << q << "\t" << chargeOf(atoms[I]) << "\t\t" << q+chargeOf(atoms[I]) << "\n";
-		printf(" %u%s\t%10.7f\t%10.7f\t%10.7f\n", I+1, atoms[I].c_str(), q, (double)chargeOf(atoms[I]), q+chargeOf(atoms[I]));
-		esum += q;
-		nsum += chargeOf(atoms[I]);
-	}
-	std::cout << "-----------------------------------------------------\n";
-	//std::cout << " sum\t" << esum << "\t" << nsum << "\t" << esum+nsum << "\n";
-	printf(" sum\t%10.7f\t%10.7f\t%10.7f\n", esum, nsum, esum+nsum);
 	//*/
 	
-	// print DBOC
-	double dboctot = 0.0;
-	std::cout << "\n\nDBOC:\n";
-	for (int I=0; I<atomNum; I++) {
-		std::cout << "  atom " << I+1 << ":\n";
-		std::cout << "    x: " << dboc(3*I + 0)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 0)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
-		std::cout << "    y: " << dboc(3*I + 1)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 1)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
-		std::cout << "    z: " << dboc(3*I + 2)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 2)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
-		dboctot += 	  dboc(3*I + 0).real()/(2*massOf(atoms[I])*1822.8885291649)
-				+ dboc(3*I + 1).real()/(2*massOf(atoms[I])*1822.8885291649)
-				+ dboc(3*I + 2).real()/(2*massOf(atoms[I])*1822.8885291649);
-	}
-	std::cout << "total DBOC = " << dboctot << " H  = " << dboctot*219474.6 << " cm-1";
-	std::cout << "\n\n";
-	
-	
-	// time stats
-	const auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
-	const auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2-begin2);
-	const auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
-	std::cout << "\n\n =================== time stats ===================\n";
-	printf("   Calculate electronic Hessian: %.3fs\n", elapsed1.count()*1e-3);
-	printf("   Calculate CPHF:               %.3fs\n", elapsed2.count()*1e-3);
-	printf("   Calculate Berry-Curvature:    %.3fs\n", elapsed3.count()*1e-3);
-	printf("   --------------------------------------------------------\n");
-	printf("   Total:                        %.3fs\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
-	
-	
-
-
-
-	// f debug
-	//std::cout << "\n\n\nf-Debug" << std::endl;
-	//auto smatSAO = readHerm("smat");
-	//std::cout << std::setprecision(4) << std::fixed << "smatSAO:\n" << smatSAO << "\n";
-	//auto smat = readFDEBUG("smatcao");
-	//std::cout << std::setprecision(4) << std::fixed << "smat:\n" << smat.transpose() << "\n";
-	//auto hmatSAO = readHerm("hmat");
-	//std::cout << std::setprecision(4) << std::fixed << "hmatSAO:\n" << hmatSAO << "\n";
-	//auto hmat = readFDEBUG("hmatcao");
-	//std::cout << std::setprecision(4) << std::fixed << "hmat:\n" << hmat.transpose() << "\n";
-
-	//auto diff = smatSAO - smat.transpose();
-	//std::cout << "diff:\n" << diff << "\n";
-	//std::cout << std::setprecision(20) << diff.cwiseAbs().maxCoeff() << "\n";
-
-	
-			
-	//Eigen::MatrixXcd tmp(spinorSize, spinorSize);
-	//tmp << smat, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-	//Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), smat;
-	//const auto smatMO = spinor.adjoint() * tmp.transpose() * spinor;
-	//std::cout << std::setprecision(6) << std::fixed << "smatMO:\n" << smatMO << "\n";
-
-	
-
-	/*
-	//for (int I=0; I<atomNum; I++) {
-	//	for (int alpha=0; alpha<3; alpha++) {
-	//		for (int J=0; J<atomNum; J++) {
-	//			for (int beta=0; beta<3; beta++) {
-	//int I = 0;
-	//int J = 0;
-	//int alpha = 0;
-	//int beta = 1;
-					//std::cout << I << " " << alpha << "     " << J << " " << beta << "\n";
-					// doppelt abgeleitete overlap matrix
-					auto braketA = readMatrix("bk" + std::to_string(0) + "x" + std::to_string(1) + "y");
-					auto braketB = readMatrix("bk" + std::to_string(0) + "x" + std::to_string(2) + "y");
-					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
-					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
-
-					Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
-					tmp3 << braketA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketA;
-					const auto braketMO = spinor.adjoint() * tmp3 * spinor;
-
-					//std::cout << "IaJb AO small real:\n" << std::fixed << std::setprecision(7) << braketA.real() << "\n\n";
-					std::cout << "IaJb AO small imag:\n" << std::fixed << std::setprecision(7) << braketA.imag() << "\n\n";
-					//std::cout << "JbIa AO small real:\n" << std::fixed << std::setprecision(7) << braketB.real() << "\n\n";
-					std::cout << "JbIa AO small imag:\n" << std::fixed << std::setprecision(7) << braketB.imag() << "\n\n";
-					//std::cout << "MO real:\n" << std::fixed << std::setprecision(7) << braketMO.real() << "\n\n";
-					//std::cout << "MO imag:\n" << std::fixed << std::setprecision(7) << braketMO.imag() << "\n\n";
-
-					std::cout << "\n\n\n";
-	//			}
-	//		}
-	//	}
-	//}
-	//*/
-	
-	/*
-	for (int I=0; I<atomNum; I++) {
-		for (int alpha=0; alpha<3; alpha++) {
-			std::cout << I << " " << alpha << "\n";
-
-
-			auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
-			//auto snxbraIA = readMatrix("b" + std::to_string(I) + cartDict[alpha]);
-			std::cout << std::fixed << std::setprecision(6) << "bra real:\n" << snxbraIA.real() << "\n";
-			std::cout << std::fixed << std::setprecision(6) << "bra imag:\n" << snxbraIA.imag() << "\n";
-			std::cout << "\n";
-			//auto snxketIA = readMatrix("k" + std::to_string(I) + cartDict[alpha]);
-			//std::cout << std::fixed << std::setprecision(6) << "ket real:\n" << snxketIA.real() << "\n";
-			//std::cout << std::fixed << std::setprecision(6) << "ket imag:\n" << snxketIA.imag() << "\n";
-
-			
-
-
-			//std::cout << std::fixed << std::setprecision(6) << "real:\n" << snxbraSum.real() << "\n";
-			//std::cout << std::fixed << std::setprecision(6) << "imag:\n" << snxbraSum.imag() << "\n";
-			//std::cout << std::fixed << std::setprecision(6) << "real:\n" << snxketSum.real() << "\n";
-			//std::cout << std::fixed << std::setprecision(6) << "imag:\n" << snxketSum.imag() << "\n";
-
-			std::cout << "\n\n\n";
-		}
-	}
-	//*/
-
-
-
-
-
 	// calculate and decompose density matrix
-	//Eigen::MatrixXcd denMat = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//for (int k=0; k<spinorSize; k++) {
-	//	for (int l=0; l<spinorSize; l++) {
-	//		for (int i=0; i<nocc; i++) {
-	//			denMat(k, l) += std::conj(spinor(k, i)) * spinor(l, i);
-	//		}
-	//	}
-	//}
+	Eigen::MatrixXcd denMat = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+	for (int k=0; k<spinorSize; k++) {
+		for (int l=0; l<spinorSize; l++) {
+			for (int i=0; i<nocc; i++) {
+				denMat(k, l) += std::conj(spinor(k, i)) * spinor(l, i);
+			}
+		}
+	}
 	//std::cout << "\ndensity matrix:\n" << denMat << "\n\n";
 	//const auto aa = denMat(Eigen::seq(0,spinorSize/2-1), Eigen::seq(0,spinorSize/2-1));
 	//const auto ab = denMat(Eigen::seq(0,spinorSize/2-1), Eigen::seq(spinorSize/2, spinorSize-1));
@@ -735,69 +484,69 @@ int main(int argc, char* argv[]) {
 		for (int alpha=0; alpha<3; alpha++) {
 			std::cout << "\n\n\n\nDebug atom " << I << ", cart " << alpha << "\n\n";
 			//if (argc>1) std::cout << "\n\n\n\nDebug atom " << I << ", cart " << alpha << "\n\n";
-			//Eigen::MatrixXcd U = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-			//auto snxbra = readHerm("b" + std::to_string(I) + cartDict[alpha]);
-			//auto snxket = readHerm("k" + std::to_string(I) + cartDict[alpha]);
-			//auto snx = snxbra + snxket;
-			//Eigen::MatrixXcd snxBig(spinorSize, spinorSize);
-			//snxBig << snx, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-			//	Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snx;
-			//const auto snxMO = spinor.adjoint() * snxBig * spinor;
+			Eigen::MatrixXcd U = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+			auto snxbra = readHerm("b" + std::to_string(I) + cartDict[alpha]);
+			auto snxket = readHerm("k" + std::to_string(I) + cartDict[alpha]);
+			auto snx = snxbra + snxket;
+			Eigen::MatrixXcd snxBig(spinorSize, spinorSize);
+			snxBig << snx, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snx;
+			const auto snxMO = spinor.adjoint() * snxBig * spinor;
 
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxbra VOR SWAP:\n" << snxbra << "\n\n";
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxket VOR SWAP:\n" << snxket << "\n\n";
 
-			//// switch lower triangle of snxbra and snxket
-			//auto tmpbra = snxbra;
-			//for (int i=0; i<spinorSize/2; i++) {
-			//	for (int j=0; j<i; j++) {
-			//		snxbra(i, j) = snxket(i, j);
-			//		snxket(i, j) = tmpbra(i, j);
-			//	}
-			//}
+			// switch lower triangle of snxbra and snxket
+			auto tmpbra = snxbra;
+			for (int i=0; i<spinorSize/2; i++) {
+				for (int j=0; j<i; j++) {
+					snxbra(i, j) = snxket(i, j);
+					snxket(i, j) = tmpbra(i, j);
+				}
+			}
 
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxbra NACH SWAP:\n" << snxbra << "\n\n";
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxket NACH SWAP:\n" << snxket << "\n\n";
 
-			//Eigen::MatrixXcd snxBraBig(spinorSize, spinorSize);
-			//snxBraBig << snxbra, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-			//	Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbra;
+			Eigen::MatrixXcd snxBraBig(spinorSize, spinorSize);
+			snxBraBig << snxbra, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbra;
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxbraBig:\n" << snxBraBig << "\n\n";
-			//const auto snxBraMO = spinor.adjoint() * snxBraBig * spinor;
+			const auto snxBraMO = spinor.adjoint() * snxBraBig * spinor;
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxbraMO:\n" << snxBraMO << "\n\n";
 			//if (argc>1) { if (*argv[1]=='0') { std::cout << std::fixed << std::setprecision(8) << "\nsnxbraMO:\n" << snxBraMO << "\n\n"; } }
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxbra:\n" << snxbra << "\n\n";
 
-			//Eigen::MatrixXcd snxKetBig(spinorSize, spinorSize);
-			//snxKetBig << snxket, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-			//	Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxket;
-			//const auto snxKetMO = spinor.adjoint() * snxKetBig * spinor;
+			Eigen::MatrixXcd snxKetBig(spinorSize, spinorSize);
+			snxKetBig << snxket, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxket;
+			const auto snxKetMO = spinor.adjoint() * snxKetBig * spinor;
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxketMO:\n" << snxKetMO << "\n\n";
 			//if (argc>1) { if (*argv[1]=='1') { std::cout << std::fixed << std::setprecision(8) << "\nsnxketMO:\n" << snxKetMO << "\n\n"; } }
 			//std::cout << std::fixed << std::setprecision(8) << "\nsnxket:\n" << snxket << "\n\n";
 
-			//for (int i=0; i<nocc; i++) {
-			//	for (int j=0; j<nocc; j++) {
-			//		U(i, j) = -0.5 * snxMO(i, j);
-			//	}
-			//}
+			for (int i=0; i<nocc; i++) {
+				for (int j=0; j<nocc; j++) {
+					U(i, j) = -0.5 * snxMO(i, j);
+				}
+			}
 			const auto uIA = readVector("u" + std::to_string(I) + "_" + std::to_string(alpha));
-			//for (int i=0; i<nocc; i++) {
-			//	for (int a=nocc; a<spinorSize; a++) {
-			//		U(a, i) = uIA(i*nvirt+a-nocc);
-			//		U(i, a) = std::conj( -1.0*(snxMO(a, i) + uIA(i*nvirt+a-nocc)) );
-			//	}
-			//}
+			for (int i=0; i<nocc; i++) {
+				for (int a=nocc; a<spinorSize; a++) {
+					U(a, i) = uIA(i*nvirt+a-nocc);
+					U(i, a) = std::conj( -1.0*(snxMO(a, i) + uIA(i*nvirt+a-nocc)) );
+				}
+			}
 
 
-			//Eigen::MatrixXcd cnxAna = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-			//for (int mu=0; mu<spinorSize; mu++) {
-			//	for (int i=0; i<spinorSize; i++) {
-			//		for (int q=0; q<spinorSize; q++) {
-			//			cnxAna(mu, i) += spinor(mu, q) * U(q, i);
-			//		}
-			//	}
-			//}
+			Eigen::MatrixXcd cnxAna = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+			for (int mu=0; mu<spinorSize; mu++) {
+				for (int i=0; i<spinorSize; i++) {
+					for (int q=0; q<spinorSize; q++) {
+						cnxAna(mu, i) += spinor(mu, q) * U(q, i);
+					}
+				}
+			}
 
 			auto cplus  = readNumSpinor("TEST5/" + std::to_string(3*I + alpha+1) + "IPlus.out");
 			auto cminus = readNumSpinor("TEST5/" + std::to_string(3*I + alpha+1) + "IMinus.out");
@@ -1066,6 +815,5 @@ int main(int argc, char* argv[]) {
 	//*/
 	
 
-	std::cout << std::endl;
 	return 0;
 }
