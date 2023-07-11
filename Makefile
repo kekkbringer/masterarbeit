@@ -13,14 +13,17 @@ debug: CFLAGS += -gdwarf-4 -gstrict-dwarf
 debug: LFLAGS += -gdwarf-4 -gstrict-dwarf
 debug: ../bin/polly
 
-../bin/polly: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o
-	$(CC) -o ../bin/polly $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(LFLAGS)
+../bin/polly: $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(ODIR)/eritrans.o
+	$(CC) -o ../bin/polly $(ODIR)/main.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(ODIR)/eritrans.o $(LFLAGS)
 
 ../bin/rhf: $(ODIR)/rhf.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o
 	$(CC) -o ../bin/rhf $(ODIR)/rhf.o $(ODIR)/cphf.o $(ODIR)/read_fourcenter.o $(ODIR)/read_herm.o $(ODIR)/read_spinor.o $(ODIR)/calc_stabmat.o $(ODIR)/fci_grad.o $(ODIR)/misc.o $(ODIR)/berry_rhs.o $(LFLAGS)
 
 $(ODIR)/calc_stabmat.o: calc_stabmat.cpp calc_stabmat.hpp
 	$(CC) -c calc_stabmat.cpp -o $(ODIR)/calc_stabmat.o $(CFLAGS) $(SANITIZE)
+
+$(ODIR)/eritrans.o: eritrans.cpp eritrans.hpp
+	$(CC) -c eritrans.cpp -o $(ODIR)/eritrans.o $(CFLAGS) $(SANITIZE)
 
 $(ODIR)/misc.o: misc.cpp misc.hpp
 	$(CC) -c misc.cpp -o $(ODIR)/misc.o $(CFLAGS) $(SANITIZE)

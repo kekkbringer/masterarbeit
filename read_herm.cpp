@@ -187,8 +187,6 @@ Eigen::MatrixXcd readHerm(std::string f) {
 	//std::cout << " number of AOs: " << nAO << "\n";
 	control.close();
 
-	mat.resize(nAO, nAO);
-
 	// reading real part
 	//std::cout << "reading file " << f << ".r...\n";
 	std::ifstream matRe(f + ".r");
@@ -203,7 +201,11 @@ Eigen::MatrixXcd readHerm(std::string f) {
 	getline(matRe, lineRe);
 	getline(matIm, lineIm);
 	int comp = nAO*(nAO-1)/2 + nAO;
-	if (stoi(lineRe) != comp) {std::cout << "\nWARNING: dimensions dont match!" << comp << " vs " << lineRe << "\n\n"; return mat;}
+	if (stoi(lineRe) != comp) {std::cout << "\nWARNING: dimensions dont match!" << comp << " vs " << lineRe << "\n\n"; /*return mat;*/}
+	nAO = -0.5 + sqrt(2.0*std::stoi(lineRe) + 0.25);
+	std::cout << "new nAO = " << nAO << std::endl;
+	mat.resize(nAO, nAO);
+
 
 	for (int i=0; i<nAO; i++) {
 		for (int j=0; j<=i; j++) {

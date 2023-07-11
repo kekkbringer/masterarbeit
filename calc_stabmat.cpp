@@ -57,6 +57,11 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 
     // fourcenter integral transformation into MO-basis
 	std::cout << "\n:: transforming fourcenter integrals to spinor basis...\n" << std::flush;
+	std::cout << "\tquartic memory requirement:    "
+				<< spinorSize*spinorSize*spinorSize*spinorSize/1000.0/1000.0 << " MB\n";
+	std::cout << "\tper spinor memory requirement: "
+				<< spinorSize*spinorSize*spinorSize/1000.0/1000.0 << " MB\n";
+	std::cout << "\tnumber of virtual orbitals: " << nvirt << "\n\n" << std::flush;
 	fourD fourCenterIntegral(spinorSize,
 			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
 				std::vector<std::vector<std::complex<double>>>(spinorSize,
@@ -122,12 +127,16 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 						//tmp[i][nu][lam][sig] += spinor(mu, i) * fciD[mu][nu][lam][sig];
 						if (mu<spinorSize/2 and nu<spinorSize/2 and lam<spinorSize/2 and sig<spinorSize/2) {
 							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu][nu][lam][sig];
+							if (i==4 and nu==0 and lam==0 and sig==5) std::cout << "Beitrag2: " << spinor(mu, i) * fci[mu][nu][lam][sig] << "\n";
 						} else if (mu>=spinorSize/2 and nu>=spinorSize/2 and lam<spinorSize/2 and sig<spinorSize/2) {
 							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu-spinorSize/2][nu-spinorSize/2][lam][sig];
+							if (i==4 and nu==0 and lam==0 and sig==5) std::cout << "Beitrag2: " << spinor(mu, i) * fci[mu-spinorSize/2][nu-spinorSize/2][lam][sig] << "\n";
 						} else if (mu<spinorSize/2 and nu<spinorSize/2 and lam>=spinorSize/2 and sig>=spinorSize/2) {
 							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu][nu][lam-spinorSize/2][sig-spinorSize/2];
+							if (i==4 and nu==0 and lam==0 and sig==5) std::cout << "Beitrag2: " << spinor(mu, i) * fci[mu][nu][lam-spinorSize/2][sig-spinorSize/2] << "\n";
 						} else if (mu>=spinorSize/2 and nu>=spinorSize/2 and lam>=spinorSize/2 and sig>=spinorSize/2) {
 							tmp[i][nu][lam][sig] += spinor(mu, i) * fci[mu-spinorSize/2][nu-spinorSize/2][lam-spinorSize/2][sig-spinorSize/2];
+							if (i==4 and nu==0 and lam==0 and sig==5) std::cout << "Beitrag2: " << spinor(mu, i) * fci[mu-spinorSize/2][nu-spinorSize/2][lam-spinorSize/2][sig-spinorSize/2] << "\n";
 						}
 					}
 				}
@@ -138,6 +147,18 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
 	printf(" done after %.3fs\n", elapsed1.count() * 1e-3);
 	std::cout << std::flush;
+
+	//for (int a=nocc; a<spinorSize; a++) {
+	//	for (int nu=0; nu<spinorSize; nu++) {
+	//		for (int kap=0; kap<spinorSize; kap++) {
+	//			for (int lam=0; lam<spinorSize; lam++) {
+	//				std::cout << "(" << a << " " << nu << " | " << kap << " " << lam << ") = "
+	//					<< tmp[a][nu][kap][lam] << "\n";
+	//			}
+	//		}
+	//	}
+	//	std::cout << "\n\n";
+	//}
 
 	auto begin2 = std::chrono::high_resolution_clock::now();
 	std::cout << "      second transformation..." << std::flush;
@@ -160,6 +181,7 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 	printf(" done after %.3fs\n", elapsed2.count() * 1e-3);
 	std::cout << std::flush;
 
+
 	auto begin3 = std::chrono::high_resolution_clock::now();
 	std::cout << "      third transformation..." << std::flush;
 	// third transformation
@@ -180,6 +202,7 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 	auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
 	printf(" done after %.3fs\n", elapsed3.count() * 1e-3);
 	std::cout << std::flush;
+
 
 	auto begin4 = std::chrono::high_resolution_clock::now();
 	std::cout << "      fourth transformation..." << std::flush;
@@ -202,10 +225,17 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 	printf(" done after %.3fs\n", elapsed4.count() * 1e-3);
 	std::cout << std::flush;
 	std::cout << "\n" << std::flush;
-	
 	// end of transformation section
 
-
+	//int a = 10;
+	//for (int p=0; p<4; p++) {
+	//	for (int q=5; q<10; q++) {
+	//		for (int r=0; r<4; r++) {
+	//			std::cout << "(" << a << " " << p << " | " << q << " " << r <<") = "
+	//				<< fourCenterIntegral[a][p][q][r] << "\n";
+	//		}
+	//	}
+	//}
 
 
 
@@ -297,24 +327,24 @@ Eigen::VectorXcd& calcStabmat(Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
 
 
 
-	// lets calc mp2 energy
-	std::complex<double> emp2 = 0.0;
-	for (int i=0; i<nocc; i++) {
-		for (int j=0; j<nocc; j++) {
-			for (int a=nocc; a<spinorSize; a++) {
-				for (int b=nocc; b<spinorSize; b++) {
-					std::complex<double> t = (fourCenterIntegral[i][a][j][b] - fourCenterIntegral[i][b][j][a])
-								* (fourCenterIntegral[i][a][j][b] - fourCenterIntegral[i][b][j][a])
-						/ (epsilon[a] + epsilon[b] - epsilon[i] - epsilon[j]);
-					//double t = (fourCenterIntegral[i][b][j][a]) * (fourCenterIntegral[i][b][j][a])
-					//std::cout << "contribution to emp2: " << t << "\n";
-					emp2 += t;
-				}
-			}
-		}
-	}
-	emp2 *= -0.25;
-	std::cout << "\n\n\nMP2-energy???   " << emp2 << "\n\n";
+	//// lets calc mp2 energy
+	//std::complex<double> emp2 = 0.0;
+	//for (int i=0; i<nocc; i++) {
+	//	for (int j=0; j<nocc; j++) {
+	//		for (int a=nocc; a<spinorSize; a++) {
+	//			for (int b=nocc; b<spinorSize; b++) {
+	//				std::complex<double> t = (fourCenterIntegral[i][a][j][b] - fourCenterIntegral[i][b][j][a])
+	//							* (fourCenterIntegral[i][a][j][b] - fourCenterIntegral[i][b][j][a])
+	//					/ (epsilon[a] + epsilon[b] - epsilon[i] - epsilon[j]);
+	//				//double t = (fourCenterIntegral[i][b][j][a]) * (fourCenterIntegral[i][b][j][a])
+	//				//std::cout << "contribution to emp2: " << t << "\n";
+	//				emp2 += t;
+	//			}
+	//		}
+	//	}
+	//}
+	//emp2 *= -0.25;
+	//std::cout << "\n\n\nMP2-energy???   " << emp2 << "\n\n";
 
 
 

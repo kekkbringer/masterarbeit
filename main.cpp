@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <string>
 #include <chrono>
+#include <algorithm>
 
 #include "misc.hpp"
 #include "cphf.hpp"
@@ -16,6 +17,7 @@
 #include "fci_grad.hpp"
 #include "berry_rhs.hpp"
 #include "misc.hpp"
+#include "eritrans.hpp"
 
 #define DEBUG 1
 #define IFDBG if constexpr (DEBUG)
@@ -50,22 +52,119 @@ int main(int argc, char* argv[]) {
 	const auto spinor = readSpinor(epsilon);
 
 	const int spinorSize = nocc + nvirt;
+
+
+	// CAO spinor test section
+	std::cout << "starting CAO test section" << std::endl;
+	makeCAOtrans();
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXcd transMat = Eigen::MatrixXcd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	std::cout << "transmat done" << std::endl;
+	Eigen::MatrixXcd transMatBIG(2*transMat.rows(), 2*transMat.cols());
+	transMatBIG << transMat, Eigen::MatrixXcd::Zero(transMat.rows(), transMat.cols()),
+			Eigen::MatrixXcd::Zero(transMat.rows(), transMat.cols()), transMat;
+	
+	const auto spinorCAO = transMatBIG * spinor;
+	std::cout << "spinorCAO done: " << spinorCAO.rows() << " x " << spinorCAO.cols() << std::endl;
+
+	const auto smatC = readHerm("smatcao");
+	// reorder smatCAO
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+	const auto smatCAO = swapMat.transpose() * smatC * swapMat;
+	
+	Eigen::MatrixXcd smatCAOBIG(2*smatCAO.rows(), 2*smatCAO.cols());
+	smatCAOBIG << smatCAO, Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()),
+			Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()), smatCAO;
+	std::cout << "smatCAOBIG: " << smatCAOBIG.rows() << " x " << smatCAOBIG.cols() << std::endl;
+	const auto hofident = spinorCAO.adjoint() * smatCAOBIG * spinorCAO;
+	//std::cout << "hofident:\n" << hofident << "\n\n";
+	for (int i=0; i<spinorSize; i++) {
+		for (int j=0; j<spinorSize; j++) {
+			if (i==j) {
+				if (abs(abs(hofident(i, j))-1.0) >= 1e-12) {
+					std::cout << "NOT IDENTITY!\n";
+					break;
+				}
+			} else {
+				if (abs(hofident(i, j)) >= 1e-12) {
+					std::cout << "NOT IDENTITY!\n";
+					break;
+				}
+			}
+		}
+	}
+	// end of CAO spinor test section
+
+	Eigen::MatrixXcd A2, B2;
+	const auto fciMO2 = eritrans(spinorCAO, nocc, nvirt, A2, B2);
+	// add spinor energies to diagonal of A
+	for (int i=0; i<nocc; i++) {
+		for (int a=nocc; a<spinorSize; a++) {
+			A2( i*nvirt+a-nocc, i*nvirt+a-nocc ) += epsilon[a] - epsilon[i];
+		}
+	}
 	
 	///*
 	const auto begin1 = std::chrono::high_resolution_clock::now();
 	Eigen::MatrixXcd A, B;
 	const auto fciMO = calcStabmat(A, B);
 
-	//std::cout << "printing fcis in spinor basis, oh boi!\n";
-	//for (auto a: fciMO) {
-	//	for (auto b: a) {
-	//		for (auto c: b) {
-	//			for (auto d: c) {
-	//				std::cout << d << "\n";
-	//			}
-	//		}
-	//	}
-	//}
+	// compare both eritrans methods
+	const auto adiff = A - A2;
+	const auto bdiff = B - B2;
+	double amax = -1.0, bmax = -1.0;
+	for (int i=0; i<nocc*nvirt; i++) {
+		for(int j=0; j<nocc*nvirt; j++) {
+			amax = std::max(amax, abs(adiff(i, j)));
+			//if (abs(adiff(i, j))>1e-8) std::cout << "a@" << i << ", " << j << "\n";
+			bmax = std::max(bmax, abs(bdiff(i, j)));
+			//if (abs(bdiff(i, j))>1e-8) std::cout << "b@" << i << ", " << j << "\n";
+		}
+	}
+	std::cout << "amax = " << amax << "\n";
+	std::cout << "bmax = " << bmax << "\n";
+
+    // construct ailkasym
+    double fciMOmaxdiff = -100;
+    for (int i=0; i<nocc; i++) {
+            for (int k=0; k<nocc; k++) {
+        	    for (int l=0; l<nocc; l++) {
+        		    for (int a=nocc; a<spinorSize; a++) {
+        			    const int index = (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i;
+        			    fciMOmaxdiff = std::max(fciMOmaxdiff, abs(fciMO(index)-fciMO2(index)));
+        			    std::cout << "richtig: " << fciMO(index) << "      falsch: " << fciMO2(index) << std::endl;
+        		    }
+        	    }
+            }
+    }
+    std::cout << "fciMOmaxdiff = " << fciMOmaxdiff << std::endl;
+
 	const auto end1 = std::chrono::high_resolution_clock::now();
 
 
@@ -81,6 +180,8 @@ int main(int argc, char* argv[]) {
 			std::cout << "done!\n";
 		}
 	}
+
+	const auto interRHScphf = std::chrono::high_resolution_clock::now();
 
 	std::cout << " :: solving CPHF equation...   " << std::flush;
 	const auto u = cphf(A, B, ball);
@@ -352,7 +453,8 @@ int main(int argc, char* argv[]) {
 
 	// kurz ins coord file nach den Atomen gucken... :D
 	std::ifstream coord("coord");
-	std::string line, word;
+	//std::string line, word;
+	std::string word;
 	std::vector<std::string> atoms;
 	getline(coord, line); //$coord
 	for (int i=0; i<atomNum; i++) {
@@ -406,11 +508,13 @@ int main(int argc, char* argv[]) {
 	
 	// time stats
 	const auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
-	const auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2-begin2);
+	const auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(interRHScphf-begin2);
+	const auto elapsedi = std::chrono::duration_cast<std::chrono::milliseconds>(end2-interRHScphf);
 	const auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
 	std::cout << "\n\n =================== time stats ===================\n";
 	printf("   Calculate electronic Hessian: %.3fs\n", elapsed1.count()*1e-3);
-	printf("   Calculate CPHF:               %.3fs\n", elapsed2.count()*1e-3);
+	printf("   Calculate RHS:                %.3fs\n", elapsed2.count()*1e-3);
+	printf("   Calculate CPHF:               %.3fs\n", elapsedi.count()*1e-3);
 	printf("   Calculate Berry-Curvature:    %.3fs\n", elapsed3.count()*1e-3);
 	printf("   --------------------------------------------------------\n");
 	printf("   Total:                        %.3fs\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);

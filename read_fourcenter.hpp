@@ -12,3 +12,4 @@ typedef std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>
 //template <typename fourD>
 //void readFourcenter(fourD &fci);
 fourD readFourcenter(std::string location = "");
+void makeCAOtrans();

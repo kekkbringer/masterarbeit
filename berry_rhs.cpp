@@ -517,58 +517,58 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// ==================================== fourcenter ===================================
 
 	// double dim of fci
-	auto fci = readFourcenter();
+	//auto fci = readFourcenter();
 	//auto fci = fciAlt(nuc, cart, lower, upper);
-	fourD fciD(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
+	//fourD fciD(spinorSize,
+	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
+	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
+	//				std::vector<std::complex<double>>(spinorSize))));
 
 	//fourD fciBig(spinorSize,
 	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
 	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
 	//				std::vector<std::complex<double>>(spinorSize))));
 
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int k=0; k<spinorSize; k++) {
-				for (int l=0; l<spinorSize; l++) {
-					fciD[i][j][k][l] = (0, 0);
-					//fciBig[i][j][k][l] = (0, 0);
-				}
-			}
-		}
-	}
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int k=0; k<spinorSize/2; k++) {
-				for (int l=0; l<spinorSize/2; l++) {
-					fciD[i][j][k][l] = fci[i][j][k][l];
-					fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-					fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-					fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//for (int i=0; i<spinorSize; i++) {
+	//	for (int j=0; j<spinorSize; j++) {
+	//		for (int k=0; k<spinorSize; k++) {
+	//			for (int l=0; l<spinorSize; l++) {
+	//				fciD[i][j][k][l] = (0, 0);
+	//				//fciBig[i][j][k][l] = (0, 0);
+	//			}
+	//		}
+	//	}
+	//}
+	//for (int i=0; i<spinorSize/2; i++) {
+	//	for (int j=0; j<spinorSize/2; j++) {
+	//		for (int k=0; k<spinorSize/2; k++) {
+	//			for (int l=0; l<spinorSize/2; l++) {
+	//				fciD[i][j][k][l] = fci[i][j][k][l];
+	//				fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//				fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+	//				fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
 
-					// exchange war richtig mit 1, 16, 6, 11
-                                        //fciBig[i][j][k][l] = fci[i][j][k][l];
-                                        //fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        //fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
-                                        //fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        //fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-                                        //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-				}
-			}
-		}
-	}
+	//				// exchange war richtig mit 1, 16, 6, 11
+        //                                //fciBig[i][j][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
+        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
+	//			}
+	//		}
+	//	}
+	//}
 
 
 
@@ -1426,7 +1426,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	outRe.close();
 	outIm.close();
 
-	std::cout << "b0ai:\n" << b0ai << "\n";
+	//std::cout << "b0ai:\n" << b0ai << "\n";
 
 
 	std::cout << "done calculating RHS\n\n\n\n" << std::flush;
