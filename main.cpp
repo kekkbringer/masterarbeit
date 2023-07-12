@@ -18,6 +18,7 @@
 #include "berry_rhs.hpp"
 #include "misc.hpp"
 #include "eritrans.hpp"
+#include "matrixio.hpp"
 
 #define DEBUG 1
 #define IFDBG if constexpr (DEBUG)
@@ -32,7 +33,6 @@ using namespace std::complex_literals;
 
 int main(int argc, char* argv[]) {
 	const std::string cartDict[] = {"x", "y", "z"};
-	constexpr bool usenum = false;
 
 	int atomNum;
 	int nocc;
@@ -144,15 +144,17 @@ int main(int argc, char* argv[]) {
 
 
 	const auto begin2 = std::chrono::high_resolution_clock::now();
-	std::cout << "\n\ncalculating orbital rotation matrix\n\n";
+	std::cout << "\n\ncalculating CPHF rhs vectors\n\n";
 	std::vector<Eigen::VectorXcd> ball;
 	split1efiles(atomNum);
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
-			std::cout << " :: calculating rhs...   ";
+			const auto beginrhs = std::chrono::high_resolution_clock::now();
 			const auto b0ai = berryRHS(nuc, cart, fciMO);
 			ball.push_back(b0ai);
-			std::cout << "done!\n";
+			const auto endrhs = std::chrono::high_resolution_clock::now();
+			const auto elapsedrhs = std::chrono::duration_cast<std::chrono::milliseconds>(endrhs-beginrhs);
+			std::cout << "after " << elapsedrhs.count()*1e-3 << " s\n\n" << std::endl;
 		}
 	}
 
@@ -182,6 +184,36 @@ int main(int argc, char* argv[]) {
 	splitBraKet(atomNum);
 	std::cout << "done!\n" << std::flush;
 
+
+	const auto begintrafo = std::chrono::high_resolution_clock::now();
+	std::cout << "transforming integrals to spinor basis...\n" << std::flush;
+	for (int I=0; I<atomNum; I++) {
+		for (int alpha=0; alpha<3; alpha++) {
+			// bra derivative
+			const auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
+			Eigen::MatrixXcd tmp1(spinorSize, spinorSize);
+			tmp1 << snxbraIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbraIA;
+			const auto snxbraIAMOip = spinor.leftCols(nocc).adjoint() * tmp1 * spinor;
+			std::string filename = "snxbraip" + std::to_string(I) + "_" + std::to_string(alpha);
+			saveMatrix(snxbraIAMOip, filename);
+
+			// ket derivative
+			const auto snxketIA = readMatrixTransform("k" + std::to_string(I) + cartDict[alpha]);
+			Eigen::MatrixXcd tmp2(spinorSize, spinorSize);
+			tmp2 << snxketIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxketIA;
+			const auto snxketIAMOip = spinor.adjoint() * tmp2 * spinor.leftCols(nocc);
+			filename = "snxketip" + std::to_string(I) + "_" + std::to_string(alpha);
+			saveMatrix(snxketIAMOip, filename);
+		}
+	}
+	const auto endtrafo = std::chrono::high_resolution_clock::now();
+	const auto elapsedtrafo = std::chrono::duration_cast<std::chrono::milliseconds>(endtrafo-begintrafo);
+	std::cout << "done after " << elapsedtrafo.count()*1e-3 << " s" << std::endl;
+
+
+
 	///* calculate actual berry curvature
 	Eigen::MatrixXcd berry  = Eigen::MatrixXcd::Zero(3*atomNum, 3*atomNum);
 	Eigen::MatrixXcd berry2 = Eigen::MatrixXcd::Zero(3*atomNum, 3*atomNum);
@@ -195,49 +227,14 @@ int main(int argc, char* argv[]) {
 	Eigen::VectorXcd dboc(3*atomNum);
 
 #pragma omp parallel for
+	std::cout << "calculating Berry curvature tensor..." << std::endl;
 	for (int I=0; I<atomNum; I++) {
 		for (int alpha=0; alpha<3; alpha++) {
 			const auto uIA = readVector("u" + std::to_string(I) + "_" + std::to_string(alpha));
 			
 			// bra abgeleitete matrix
-			const auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
-			//const auto snxketIA = readMatrixTransform("k" + std::to_string(I) + cartDict[alpha]);
-			
-			Eigen::MatrixXcd tmp1(spinorSize, spinorSize);
-			tmp1 << snxbraIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbraIA;
-			//const auto snxbraIAMO = spinor.adjoint() * tmp1 * spinor;
-			const auto snxbraIAMOip = spinor.leftCols(nocc).adjoint() * tmp1 * spinor;
-
-			////// test stuff und DBOC
-			//Eigen::MatrixXcd tmp4(spinorSize, spinorSize);
-			//tmp4 << snxketIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-			//	Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxketIA;
-			//const auto snxketIAMO = spinor.adjoint() * tmp4 * spinor;
-
-
-			// DBOC section
-//#ifdef DBOC
-//			// doppelt abgeleitete overlap matrix
-//			auto braketIAIA = readMatrixTransform("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(I) + cartDict[alpha]);
-//			Eigen::MatrixXcd tmpDBOC1(spinorSize, spinorSize);
-//			tmpDBOC1 << braketIAIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-//				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketIAIA;
-//			const auto braketDBOC = spinor.adjoint() * tmpDBOC1 * spinor;
-//
-//			dboc(3*I+alpha) = 0.0;
-//			for (int i=0; i<nocc; i++) {
-//				dboc(3*I+alpha) += braketDBOC(i, i);
-//				for (int r=0; r<spinorSize; r++) {
-//					dboc(3*I+alpha) -= abs(snxbraIAMO(i, r)) * abs(snxbraIAMO(i, r));
-//				}
-//				for (int a=nocc; a<spinorSize; a++) {
-//					dboc(3*I+alpha) += abs(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc)) * abs(snxketIAMO(a, i) + uIA(i*nvirt+a-nocc));
-//				}
-//			}
-//#endif
-			// end of DBOC section
-
+			const std::string filename = "snxbraip" + std::to_string(I) + "_" + std::to_string(alpha);
+			const auto snxbraIAMOip = loadMatrix(filename);
 
 			for (int J=0; J<=I; J++) {
 				int betamax = 3;
@@ -245,21 +242,9 @@ int main(int argc, char* argv[]) {
 				for (int beta=0; beta<betamax; beta++) {
 					auto uJB = readVector("u" + std::to_string(J) + "_" + std::to_string(beta));
 					
-					// bra abgeleitete matrix
-					//auto snxbraJB = readMatrixTransform("b" + std::to_string(J) + cartDict[beta]);
-					auto snxketJB = readMatrixTransform("k" + std::to_string(J) + cartDict[beta]);
-					
-					Eigen::MatrixXcd tmp2(spinorSize, spinorSize);
-					tmp2 << snxketJB, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxketJB;
-					//const auto snxketJBMO = spinor.adjoint() * tmp2 * spinor;
-					const auto snxketJBMOip = spinor.adjoint() * tmp2 * spinor.leftCols(nocc);
-
-					//Eigen::MatrixXcd tmpa(spinorSize, spinorSize);
-					//tmpa << snxbraJB, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-					//	Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbraJB;
-					//const auto snxbraJBMO = spinor.adjoint() * tmpa * spinor;
-					
+					// ket abgeleitete matrix
+					const std::string filename2 = "snxketip" + std::to_string(J) + "_" + std::to_string(beta);
+					const auto snxketJBMOip = loadMatrix(filename2);
 
 					// doppelt abgeleitete overlap matrix
 					auto braketA = readMatrixTransform("bk" + std::to_string(I) + cartDict[alpha] + std::to_string(J) + cartDict[beta]);
@@ -267,11 +252,9 @@ int main(int argc, char* argv[]) {
 					Eigen::MatrixXcd tmp3(spinorSize, spinorSize);
 					tmp3 << braketA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 						Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), braketA;
-					//const auto braketMO = spinor.adjoint() * tmp3 * spinor;
 
 
 					for (int i=0; i<nocc; i++) {
-						//berry(3*I+alpha, 3*J+beta) += braketMO(i, i);
 						berry(3*I+alpha, 3*J+beta) += (spinor.col(i).adjoint() * tmp3 * spinor.col(i))(0, 0);
 						
 						for (int a=nocc; a<spinorSize; a++) {
@@ -371,31 +354,14 @@ int main(int argc, char* argv[]) {
 		}
 		partialCharges.push_back(q);
 		//std::cout << " " << I+1 << atoms[I] << "\t" << q << "\t" << chargeOf(atoms[I]) << "\t\t" << q+chargeOf(atoms[I]) << "\n";
-		printf(" %u%s\t%10.7f\t%10.7f\t%10.7f\n", I+1, atoms[I].c_str(), q, (double)chargeOf(atoms[I]), q+chargeOf(atoms[I]));
+		printf(" %u%s\t% 10.7f\t% 10.7f\t% 10.7f\n", I+1, atoms[I].c_str(), q, (double)chargeOf(atoms[I]), q+chargeOf(atoms[I]));
 		esum += q;
 		nsum += chargeOf(atoms[I]);
 	}
 	std::cout << "-----------------------------------------------------\n";
 	//std::cout << " sum\t" << esum << "\t" << nsum << "\t" << esum+nsum << "\n";
-	printf(" sum\t%10.7f\t%10.7f\t%10.7f\n", esum, nsum, esum+nsum);
+	printf(" sum\t% 10.7f\t% 10.7f\t% 10.7f\n", esum, nsum, esum+nsum);
 	//*/
-	
-#ifdef DBOC
-	// print DBOC
-	double dboctot = 0.0;
-	//std::cout << "\n\nDBOC:\n";
-	for (int I=0; I<atomNum; I++) {
-		//std::cout << "  atom " << I+1 << ":\n";
-		//std::cout << "    x: " << dboc(3*I + 0)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 0)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
-		//std::cout << "    y: " << dboc(3*I + 1)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 1)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
-		//std::cout << "    z: " << dboc(3*I + 2)/(2*massOf(atoms[I])*1822.8885291649) << "H   = " << 219474.6 * dboc(3*I + 2)/(2*massOf(atoms[I])*1822.8885291649) << "cm-1\n";
-		dboctot += 	  dboc(3*I + 0).real()/(2*massOf(atoms[I])*1822.8885291649)
-				+ dboc(3*I + 1).real()/(2*massOf(atoms[I])*1822.8885291649)
-				+ dboc(3*I + 2).real()/(2*massOf(atoms[I])*1822.8885291649);
-	}
-	std::cout << "\n\ntotal DBOC = " << dboctot << " H  = " << dboctot*219474.6 << " cm-1";
-	std::cout << "\n\n";
-#endif
 	
 	
 	// time stats
@@ -404,12 +370,12 @@ int main(int argc, char* argv[]) {
 	const auto elapsedi = std::chrono::duration_cast<std::chrono::milliseconds>(end2-interRHScphf);
 	const auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
 	std::cout << "\n\n =================== time stats ===================\n";
-	printf("   Calculate electronic Hessian: %.3fs\n", elapsed1.count()*1e-3);
-	printf("   Calculate RHS:                %.3fs\n", elapsed2.count()*1e-3);
-	printf("   Solve CPHF:                   %.3fs\n", elapsedi.count()*1e-3);
-	printf("   Calculate Berry-Curvature:    %.3fs\n", elapsed3.count()*1e-3);
+	printf("   Calculate electronic Hessian: %.3f s\n", elapsed1.count()*1e-3);
+	printf("   Calculate RHS:                %.3f s\n", elapsed2.count()*1e-3);
+	printf("   Solve CPHF:                   %.3f s\n", elapsedi.count()*1e-3);
+	printf("   Calculate Berry-Curvature:    %.3f s\n", elapsed3.count()*1e-3);
 	printf("   --------------------------------------------------------\n");
-	printf("   Total:                        %.3fs\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
+	printf("   Total:                        %.3f s\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
 	
 	
 	std::cout << std::endl;

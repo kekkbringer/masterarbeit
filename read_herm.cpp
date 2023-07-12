@@ -201,9 +201,9 @@ Eigen::MatrixXcd readHerm(std::string f) {
 	getline(matRe, lineRe);
 	getline(matIm, lineIm);
 	int comp = nAO*(nAO-1)/2 + nAO;
-	if (stoi(lineRe) != comp) {std::cout << "\nWARNING: dimensions dont match!" << comp << " vs " << lineRe << "\n\n"; /*return mat;*/}
+	//if (stoi(lineRe) != comp) {std::cout << "\nWARNING: dimensions dont match!" << comp << " vs " << lineRe << "\n\n"; /*return mat;*/}
 	nAO = -0.5 + sqrt(2.0*std::stoi(lineRe) + 0.25);
-	std::cout << "new nAO = " << nAO << std::endl;
+	//std::cout << "new nAO = " << nAO << std::endl;
 	mat.resize(nAO, nAO);
 
 

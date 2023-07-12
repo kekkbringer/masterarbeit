@@ -439,7 +439,7 @@ fourD fciAlt(int nuc, int cart) {
 	/*****************************************************************************
 	*         transform d orbitals from cartesian to real spherical              *
 	*****************************************************************************/
-	std::cout << " transforming d orbitals from cartesian to real spherical...\n" << std::flush;
+	std::cout << " \ttransforming d orbitals from cartesian to real spherical...\n" << std::flush;
 	constexpr double normZZ   = 1.0/sqrt(12.0);//0.2886751346;//1.0/sqrt(6.0);
 	constexpr double normXXYY = 0.5;//1.0/sqrt(2.0);
 	constexpr double beta = 1.0;//0.655722;
@@ -495,17 +495,6 @@ fourD fciAlt(int nuc, int cart) {
 			trans[orbitalIndexMap[orb][1]][returnMap[orb][6]] = -1.0 * 0.5 / sqrt(6) * -1.0;
 		}
 	}
-
-	// print trans matrix
-	//std::cout << std::setprecision(1);
-	//for (auto x: trans) {
-	//	for (auto y: x) {
-	//		std::cout << y << "  ";
-	//	}
-	//	std::cout << "\n";
-	//}
-	//std::cout << "\n" << std::flush;
-
 
 	// init return vector
 	fourD returnfci(returnSize,

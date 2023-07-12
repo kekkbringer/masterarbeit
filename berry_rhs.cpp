@@ -184,7 +184,7 @@ void split1efiles(int atomNum) {
 	hgradRe.close();
 	hgradIm.close();
 
-	std::cout << "   done\n";
+	std::cout << "   done\n\n\n";
 }
 
 Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd& ailkasym) {
@@ -345,7 +345,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	 */
 
 	// looking for occupied spinors in control file
-	std::cout << "      reading control file for some additional infos...\n" << std::flush;
+	std::cout << "\treading control file for some additional infos...\n" << std::flush;
 	int nocc = 0;
 	double Bx = 0.0;
 	double By = 0.0;
@@ -394,13 +394,13 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//Bx /= 2.35051756758e5;
 	//By /= 2.35051756758e5;
 	//Bz /= 2.35051756758e5;
-	std::cout << "scaled B vector: " << Bx << "  " << By << "  " << Bz << "\n";
-	std::cout << "Bnorm = " << Bnorm << "\n";
+	//std::cout << "scaled B vector: " << Bx << "  " << By << "  " << Bz << "\n";
+	//std::cout << "Bnorm = " << Bnorm << "\n";
 
 	// end of control file section
 	control.close();
 
-	std::cout << "\n" << std::flush;
+	//std::cout << "\n" << std::flush;
 
 
 
@@ -430,7 +430,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	/*****************************************************************************
 	 *                             calculate fock matrix                         *
 	 ****************************************************************************/
-	std::cout << "calculating derivative of fock matrix...\n";
+	std::cout << "\tcalculating derivative of fock matrix...\n";
 	std::vector<double> epsilon;
 	auto spinor = readSpinor(epsilon);
 	int spinorSize = spinor.rows();
@@ -447,7 +447,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// ==================================== SPIN ZEEMAN ===================================
 
 	// spin-Zeeman contribution (SAO)
-	std::cout << "calculating spin Zeeman contribution\n";
+	std::cout << "\tcalculating spin Zeeman contribution\n";
 	Eigen::MatrixXcd zeemanx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	Eigen::MatrixXcd zeemany = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	Eigen::MatrixXcd zeemanz = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
@@ -463,7 +463,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	fockSAO += zeemany;
 	fockSAO += zeemanz;
 
-	std::cout << "calculating derivative of spin Zeeman contribution\n";
+	std::cout << "\tcalculating derivative of spin Zeeman contribution\n";
 	const double spinFactor = 1.0;
 
 	// transform to spinor basis
@@ -573,12 +573,16 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 
 
 	// fourcenter derivatives in SAO basis
-	std::cout << std::flush << "reading g4c..." << std::flush;
+	const auto beginread = std::chrono::high_resolution_clock::now();
+	std::cout << std::flush << "\treading g4c..." << std::flush;
 	const auto fcinx = fciAlt(nuc, cart);
-	std::cout << "  done reading!\n\ncalculating 2e part of gradient...\n" << std::flush;
+	const auto endread = std::chrono::high_resolution_clock::now();
+	const auto elapsedread = std::chrono::duration_cast<std::chrono::milliseconds>(endread-beginread);
+	std::cout << "\tdone reading after " << elapsedread.count()*1e-3 << " s\n\n";
+	std::cout << "\tcalculating 2e part of gradient...\n" << std::flush;
 
 	auto begin1 = std::chrono::high_resolution_clock::now();
-	std::cout << "define spin components... " << std::flush;
+	std::cout << "\tdefine spin components... " << std::flush;
 	// double den kack
 	fourD fcinxD(spinorSize,
 			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
@@ -730,7 +734,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//F << hmat, Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 	//	Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hmat;
 	auto begin2 = std::chrono::high_resolution_clock::now();
-	std::cout << "calculating derivative of G..." << std::flush;
+	std::cout << "\tcalculating derivative of G..." << std::flush;
 	for (int k=0; k<spinorSize; k++) {
 		for (int l=0; l<spinorSize; l++) {
 			for (int m=0; m<spinorSize; m++) {
@@ -756,7 +760,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << "exchange:\n" << K << "\n\n";
 	//fockSAO += C.transpose();
 	//fockSAO += K.transpose();
-	std::cout << "updating fock derivative..." << std::flush;
+	std::cout << "\tupdating fock derivative..." << std::flush;
 	fnx += Cnx.transpose();
 	fnx += Knx.transpose();
 	std::cout << " done.\n" << std::flush;
@@ -1367,7 +1371,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	}
 
 	auto begin = std::chrono::high_resolution_clock::now();
-	std::cout << "putting RHS together..." << std::flush;
+	std::cout << "\tputting RHS together..." << std::flush;
 	//for (int i=0; i<nocc; i++) {
 	//	for (int a=nocc; a<spinorSize; a++) {
 	//		const int index = i*nvirt + a - nocc;
@@ -1408,7 +1412,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	}
 	auto end = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin);
-	printf("    total done after %.3fs\n", elapsed.count()*1e-3);
+	printf("\ttotal done after %.3fs\n", elapsed.count()*1e-3);
 	std::cout << std::flush;
 
 	//std::cout << std::fixed << std::setprecision(8) << "\nb:\n" << b0ai << "\n";
@@ -1429,6 +1433,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << "b0ai:\n" << b0ai << "\n";
 
 
-	std::cout << "done calculating RHS\n\n\n\n" << std::flush;
+	std::cout << "done calculating RHS\n" << std::flush;
 	return b0ai;
 }
