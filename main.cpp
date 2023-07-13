@@ -103,9 +103,7 @@ int main(int argc, char* argv[]) {
 	Eigen::MatrixXcd smatCAOBIG(2*smatCAO.rows(), 2*smatCAO.cols());
 	smatCAOBIG << smatCAO, Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()),
 			Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()), smatCAO;
-	std::cout << "smatCAOBIG: " << smatCAOBIG.rows() << " x " << smatCAOBIG.cols() << std::endl;
 	const auto hofident = spinorCAO.adjoint() * smatCAOBIG * spinorCAO;
-	//std::cout << "hofident:\n" << hofident << "\n\n";
 	bool iden = true;
 	for (int i=0; i<spinorSize; i++) {
 		for (int j=0; j<spinorSize; j++) {
@@ -376,6 +374,9 @@ int main(int argc, char* argv[]) {
 	printf("   Calculate Berry-Curvature:    %.3f s\n", elapsed3.count()*1e-3);
 	printf("   --------------------------------------------------------\n");
 	printf("   Total:                        %.3f s\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
+
+
+	deleteTmpFiles(atomNum);
 	
 	
 	std::cout << std::endl;

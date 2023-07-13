@@ -15,3 +15,4 @@ Eigen::MatrixXcd readFDEBUG(std::string file);
 void saveVector(Eigen::VectorXcd vec, std::string name);
 void splitBraKet(int atomNum);
 Eigen::MatrixXcd readNumSpinor(std::string filename);
+void deleteTmpFiles(const int natom);

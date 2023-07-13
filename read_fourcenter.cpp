@@ -108,7 +108,7 @@ fourD readFourcenter(std::string location) {
 
 	//std::cout << "\n\nBREAK 1\n\n" << std::flush;
 
-	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize;
+	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize ;
 	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize;
 
 	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+fSize+1);
@@ -601,17 +601,19 @@ void makeCAOtrans() {
 	// reading basis set info from 'basis' file
 	std::ifstream basis("basis");
 	if (basis.fail()) std::cout << "\nWARNING: could not read basis file!\n";
-	std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
-	std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
+	//std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
+	//std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
 
 	std::vector<int> s(atomNum);
 	std::vector<int> p(atomNum);
 	std::vector<int> d(atomNum);
 	std::vector<int> f(atomNum);
+	std::vector<int> g(atomNum);
 	int sSize = 0;
 	int pSize = 0;
 	int dSize = 0;
 	int fSize = 0;
+	int gSize = 0;
 	//std::cout << " looking for comments\n";
 	while (getline(basis, line)) {
 		if (line[0] == '#') {
@@ -654,12 +656,20 @@ void makeCAOtrans() {
 							dSize += d[atom];
 							i++;
 							f.push_back(0);
-							for (; i<word.length()-1; i++) { // d
+							for (; i<word.length()-1; i++) { // f
 								if (word[i] == 'f') break;
 								f[atom] *= 10;
 								f[atom] += word[i] - '0';
 							}
 							fSize += f[atom];
+							i++;
+							g.push_back(0);
+							for (; i<word.length()-1; i++) { // g
+								if (word[i] == 'g') break;
+								g[atom] *= 10;
+								g[atom] += word[i] - '0';
+							}
+							gSize += g[atom];
 						}
 					}
 				}
@@ -667,13 +677,13 @@ void makeCAOtrans() {
 		}
 	}
 
-	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize;
-	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize;
+	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize + 15*gSize;
+	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize + 9*gSize;
 
-	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+fSize+1);
+	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+fSize+gSize+1);
 	orbitalIndexMap[0] = {-1};
 
-	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+fSize+1);
+	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+fSize+gSize+1);
 	returnMap[0] = {-1};
 
 	//std::cout << "init orbitalIndexMap...\n";
@@ -687,7 +697,7 @@ void makeCAOtrans() {
 			orbIndex++;
 			aoIndex++;
 		}
-		aoIndex += 3*p[atom] + 6*d[atom] + 10*f[atom];
+		aoIndex += 3*p[atom] + 6*d[atom] + 10*f[atom] + 15*g[atom];
 	}
 	// second: all p orbitals
 	aoIndex = 0;
@@ -699,7 +709,7 @@ void makeCAOtrans() {
 			orbIndex++;
 			aoIndex += 3;
 		}
-		aoIndex += 6*d[atom] + 10*f[atom];
+		aoIndex += 6*d[atom] + 10*f[atom] + 15*g[atom];
 	}
 	// third: d orbitals
 	aoIndex = 0;
@@ -711,7 +721,7 @@ void makeCAOtrans() {
 			orbIndex++;
 			aoIndex += 6;
 		}
-		aoIndex += 10*f[atom];
+		aoIndex += 10*f[atom] + 15*g[atom];
 	}
 	// fourth: f orbitals
 	aoIndex = 0;
@@ -723,6 +733,20 @@ void makeCAOtrans() {
 						     aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8, aoIndex+9};
 			orbIndex++;
 			aoIndex += 10;
+		}
+		aoIndex += 15*g[atom];
+	}
+	// fifth: g-orbitals
+	aoIndex = 0;
+	for (int atom=0; atom<atomNum; atom++) {
+		aoIndex += s[atom]+3*p[atom]+6*d[atom]+10*f[atom]; // shift by s, p, d and f
+		// iterate over g-functions of current atom
+		for (int i=0; i<g[atom]; i++) {
+			orbitalIndexMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4,
+						     aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8, aoIndex+9,
+						     aoIndex+10, aoIndex+11, aoIndex+12, aoIndex+13, aoIndex+14};
+			orbIndex++;
+			aoIndex += 15;
 		}
 	}
 
@@ -744,7 +768,7 @@ void makeCAOtrans() {
 			orbIndex++;
 			aoIndex++;
 		}
-		aoIndex += 3*p[atom] + 5*d[atom] + 7*f[atom];
+		aoIndex += 3*p[atom] + 5*d[atom] + 7*f[atom] + 9*g[atom];
 	}
 	// second: all p orbitals
 	aoIndex = 0;
@@ -756,7 +780,7 @@ void makeCAOtrans() {
 			orbIndex++;
 			aoIndex += 3;
 		}
-		aoIndex += 5*d[atom] + 7*f[atom];
+		aoIndex += 5*d[atom] + 7*f[atom] + 9*g[atom];
 	}
 	// third: d orbitals
 	aoIndex = 0;
@@ -768,7 +792,7 @@ void makeCAOtrans() {
 			orbIndex++;
 			aoIndex += 5;
 		}
-		aoIndex += 7*f[atom];
+		aoIndex += 7*f[atom] + 9*g[atom];
 	}
 	// fourth: f orbitals
 	aoIndex = 0;
@@ -779,6 +803,18 @@ void makeCAOtrans() {
 			returnMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4, aoIndex+5, aoIndex+6};
 			orbIndex++;
 			aoIndex += 7;
+		}
+		aoIndex += 9*g[atom];
+	}
+	// fifth: g-orbitals
+	aoIndex = 0;
+	for (int atom=0; atom<atomNum; atom++) {
+		aoIndex += s[atom]+3*p[atom]+5*d[atom]+7*f[atom]; // shift by s, p, d and f
+		// iterate over g-functions of current atom
+		for (int i=0; i<g[atom]; i++) {
+			returnMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4, aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8};
+			orbIndex++;
+			aoIndex += 9;
 		}
 	}
 
@@ -792,9 +828,9 @@ void makeCAOtrans() {
 	//	std::cout << "\n";
 	//}
 	
-	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize, sSize+3*pSize+6*dSize+10*fSize);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize+15*gSize, sSize+3*pSize+6*dSize+10*fSize+15*gSize);
 	int orbcounter = 0;
-	for (int i=1; i<sSize+pSize+dSize+fSize+1; i++) {
+	for (int i=1; i<sSize+pSize+dSize+fSize+gSize+1; i++) {
 		for (auto x: orbitalIndexMap[i]) {
 			//std::cout << x << "   ";
 			swapMat(orbcounter, x) = 1;
@@ -807,9 +843,9 @@ void makeCAOtrans() {
 	// save swap matrix to file berryswap.r
 	std::ofstream swapfile;
 	swapfile.open("berryswap.r");
-	swapfile << sSize+3*pSize+6*dSize+10*fSize << "\n";
-	for (int i=0; i<sSize+3*pSize+6*dSize+10*fSize; i++) {
-		for (int j=0; j<sSize+3*pSize+6*dSize+10*fSize; j++) {
+	swapfile << sSize+3*pSize+6*dSize+10*fSize+15*gSize << "\n";
+	for (int i=0; i<sSize+3*pSize+6*dSize+10*fSize+15*gSize; i++) {
+		for (int j=0; j<sSize+3*pSize+6*dSize+10*fSize+15*gSize; j++) {
 			swapfile << std::fixed << std::setprecision(15) << swapMat(i, j).real() << "\n";
 		}
 	}
@@ -876,6 +912,53 @@ void makeCAOtrans() {
 			// f y(3x^2-y^2)                              
 			trans[orbitalIndexMap[orb][3]][returnMap[orb][6]] =  3.0 * 0.5 / sqrt(6) * -1.0;
 			trans[orbitalIndexMap[orb][1]][returnMap[orb][6]] = -1.0 * 0.5 / sqrt(6) * -1.0;
+		} else if (returnMap[orb].size() == 9) { // g
+			// g1
+			trans[orbitalIndexMap[orb][0]][returnMap[orb][0]] = 3.6596252735570003e-002;
+			trans[orbitalIndexMap[orb][1]][returnMap[orb][0]] = 3.6596252735570003e-002;
+			trans[orbitalIndexMap[orb][2]][returnMap[orb][0]] = 9.7590007294853356e-002;
+			trans[orbitalIndexMap[orb][9]][returnMap[orb][0]] = 7.3192505471140007e-002;
+			trans[orbitalIndexMap[orb][10]][returnMap[orb][0]] = -0.29277002188455997;
+			trans[orbitalIndexMap[orb][11]][returnMap[orb][0]] = -0.29277002188455997;
+
+			// g2
+			trans[orbitalIndexMap[orb][4]][returnMap[orb][1]] = -0.23145502494313791;
+			trans[orbitalIndexMap[orb][7]][returnMap[orb][1]] = 0.30860669992418382;
+			trans[orbitalIndexMap[orb][13]][returnMap[orb][1]] = -0.23145502494313791;
+
+			// g3
+			trans[orbitalIndexMap[orb][6]][returnMap[orb][2]] = -0.23145502494313791;
+			trans[orbitalIndexMap[orb][8]][returnMap[orb][2]] = 0.30860669992418382;
+			trans[orbitalIndexMap[orb][12]][returnMap[orb][2]] = -0.23145502494313791;
+
+			// g4
+			trans[orbitalIndexMap[orb][3]][returnMap[orb][3]] = -0.10910894511799619;
+			trans[orbitalIndexMap[orb][5]][returnMap[orb][3]] = -0.10910894511799619;
+			trans[orbitalIndexMap[orb][14]][returnMap[orb][3]] = 0.65465367070797720;
+
+			// g5
+			trans[orbitalIndexMap[orb][0]][returnMap[orb][4]] = 5.4554472558998097e-002;
+			trans[orbitalIndexMap[orb][1]][returnMap[orb][4]] = -5.4554472558998097e-002;
+			trans[orbitalIndexMap[orb][10]][returnMap[orb][4]] = -0.32732683535398860;
+			trans[orbitalIndexMap[orb][11]][returnMap[orb][4]] = 0.32732683535398860;
+
+			// g6
+			trans[orbitalIndexMap[orb][4]][returnMap[orb][5]] = 0.20412414523193151;
+			trans[orbitalIndexMap[orb][13]][returnMap[orb][5]] = -0.61237243569579447;
+
+			// g7
+			trans[orbitalIndexMap[orb][6]][returnMap[orb][6]] = 0.20412414523193151;
+			trans[orbitalIndexMap[orb][12]][returnMap[orb][6]] = -0.61237243569579447;
+
+			// g8
+			trans[orbitalIndexMap[orb][3]][returnMap[orb][7]] = 0.28867513459481287;
+			trans[orbitalIndexMap[orb][5]][returnMap[orb][7]] = -0.28867513459481287;
+
+			// g9
+			trans[orbitalIndexMap[orb][0]][returnMap[orb][8]] = 7.2168783648703230e-002;
+			trans[orbitalIndexMap[orb][1]][returnMap[orb][8]] = 7.2168783648703230e-002;
+			trans[orbitalIndexMap[orb][9]][returnMap[orb][8]] = -0.43301270189221930;
+
 		}
 	}
 

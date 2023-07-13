@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <fstream>
 #include <iomanip>
+#include <cstdio>
 
 #include "misc.hpp"
 #include "read_spinor.hpp"
@@ -560,4 +561,88 @@ Eigen::MatrixXcd readFDEBUG(std::string filename) {
 	
 	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
 	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+}
+
+void deleteTmpFiles(const int natom) {
+	std::remove("berryswap.r");
+	std::remove("berryswap.i");
+	std::remove("berrytrans.r");
+	std::remove("berrytrans.i");
+	for (int I=0; I<natom; I++) {
+		std::remove(("b0ai" + std::to_string(I) + "_0.r").c_str());
+		std::remove(("b0ai" + std::to_string(I) + "_0.i").c_str());
+		std::remove(("b0ai" + std::to_string(I) + "_1.r").c_str());
+		std::remove(("b0ai" + std::to_string(I) + "_1.i").c_str());
+		std::remove(("b0ai" + std::to_string(I) + "_2.r").c_str());
+		std::remove(("b0ai" + std::to_string(I) + "_2.i").c_str());
+
+		std::remove(("b" + std::to_string(I) + "x.r").c_str());
+		std::remove(("b" + std::to_string(I) + "x.i").c_str());
+		std::remove(("b" + std::to_string(I) + "y.r").c_str());
+		std::remove(("b" + std::to_string(I) + "y.i").c_str());
+		std::remove(("b" + std::to_string(I) + "z.r").c_str());
+		std::remove(("b" + std::to_string(I) + "z.i").c_str());
+
+		std::remove(("h" + std::to_string(I) + "x.r").c_str());
+		std::remove(("h" + std::to_string(I) + "x.i").c_str());
+		std::remove(("h" + std::to_string(I) + "y.r").c_str());
+		std::remove(("h" + std::to_string(I) + "y.i").c_str());
+		std::remove(("h" + std::to_string(I) + "z.r").c_str());
+		std::remove(("h" + std::to_string(I) + "z.i").c_str());
+
+		std::remove(("k" + std::to_string(I) + "x.r").c_str());
+		std::remove(("k" + std::to_string(I) + "x.i").c_str());
+		std::remove(("k" + std::to_string(I) + "y.r").c_str());
+		std::remove(("k" + std::to_string(I) + "y.i").c_str());
+		std::remove(("k" + std::to_string(I) + "z.r").c_str());
+		std::remove(("k" + std::to_string(I) + "z.i").c_str());
+
+		std::remove(("snxbraip" + std::to_string(I) + "_0.r").c_str());
+		std::remove(("snxbraip" + std::to_string(I) + "_0.i").c_str());
+		std::remove(("snxbraip" + std::to_string(I) + "_1.r").c_str());
+		std::remove(("snxbraip" + std::to_string(I) + "_1.i").c_str());
+		std::remove(("snxbraip" + std::to_string(I) + "_2.r").c_str());
+		std::remove(("snxbraip" + std::to_string(I) + "_2.i").c_str());
+
+		std::remove(("snxketip" + std::to_string(I) + "_0.r").c_str());
+		std::remove(("snxketip" + std::to_string(I) + "_0.i").c_str());
+		std::remove(("snxketip" + std::to_string(I) + "_1.r").c_str());
+		std::remove(("snxketip" + std::to_string(I) + "_1.i").c_str());
+		std::remove(("snxketip" + std::to_string(I) + "_2.r").c_str());
+		std::remove(("snxketip" + std::to_string(I) + "_2.i").c_str());
+
+		for (int J=0; J<natom; J++) {
+			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "x.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "y.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "z" + std::to_string(J) + "z.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "y.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "x.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "z.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "z" + std::to_string(J) + "x.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "z.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "z" + std::to_string(J) + "y.r").c_str());
+			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "x.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "y.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "z" + std::to_string(J) + "z.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "y.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "x.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "z.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "z" + std::to_string(J) + "x.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "z.i").c_str());
+			std::remove(("bk" + std::to_string(I) + "z" + std::to_string(J) + "y.i").c_str());
+		}
+	}
+
+	std::remove("cfock.r");
+	std::remove("cfock.i");
+	std::remove("xfock.r");
+	std::remove("xfock.i");
+	std::remove("edipole.r");
+	std::remove("edipole.i");
+	std::remove("hmatcao.r");
+	std::remove("hmatcao.i");
+	//std::remove("smatcao.r");
+	//std::remove("smatcao.i");
+	std::remove("wcao.r");
+	std::remove("wcao.i");
 }

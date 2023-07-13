@@ -50,10 +50,12 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	std::vector<int> p(atomNum);
 	std::vector<int> d(atomNum);
 	std::vector<int> f(atomNum);
+	std::vector<int> g(atomNum);
 	int sSize = 0;
 	int pSize = 0;
 	int dSize = 0;
 	int fSize = 0;
+	int gSize = 0;
 	//std::cout << " looking for comments\n";
 	while (getline(basis, line)) {
 		if (line[0] == '#') {
@@ -102,6 +104,14 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 								f[atom] += word[i] - '0';
 							}
 							fSize += f[atom];
+							i++;
+							g.push_back(0);
+							for (; i<word.length()-1; i++) { // g
+								if (word[i] == 'g') break;
+								g[atom] *= 10;
+								g[atom] += word[i] - '0';
+							}
+							gSize += g[atom];
 						}
 					}
 				}
@@ -111,13 +121,13 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 
 	//std::cout << "\n\nBREAK 1\n\n" << std::flush;
 
-	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize;	// nCAO
-	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize;	// nSAO
+	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize + 15*gSize;	// nCAO
+	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize + 9*gSize;	// nSAO
 
-	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+fSize+1);
+	std::vector<std::vector<int>> orbitalIndexMap(sSize+pSize+dSize+fSize+gSize+1);
 	orbitalIndexMap[0] = {-1};
 
-	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+fSize+1);
+	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+fSize+gSize+1);
 	returnMap[0] = {-1};
 
 	//std::cout << "init orbitalIndexMap...\n";
@@ -131,7 +141,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			orbIndex++;
 			aoIndex++;
 		}
-		aoIndex += 3*p[atom] + 6*d[atom] + 10*f[atom];
+		aoIndex += 3*p[atom] + 6*d[atom] + 10*f[atom] + 15*g[atom];
 	}
 	// second: all p orbitals
 	aoIndex = 0;
@@ -143,7 +153,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			orbIndex++;
 			aoIndex += 3;
 		}
-		aoIndex += 6*d[atom] + 10*f[atom];
+		aoIndex += 6*d[atom] + 10*f[atom] + 15*g[atom];
 	}
 	// third: d orbitals
 	aoIndex = 0;
@@ -155,7 +165,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			orbIndex++;
 			aoIndex += 6;
 		}
-		aoIndex += 10*f[atom];
+		aoIndex += 10*f[atom] + 15*g[atom];
 	}
 	// fourth: f orbitals
 	aoIndex = 0;
@@ -167,6 +177,20 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 						     aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8, aoIndex+9};
 			orbIndex++;
 			aoIndex += 10;
+		}
+		aoIndex += 15*g[atom];
+	}
+	// fifth: g-orbitals
+	aoIndex = 0;
+	for (int atom=0; atom<atomNum; atom++) {
+		aoIndex += s[atom]+3*p[atom]+6*d[atom]+10*f[atom]; // shift by s, p, d and f
+		// iterate over g-functions of current atom
+		for (int i=0; i<g[atom]; i++) {
+			orbitalIndexMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4,
+						     aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8, aoIndex+9,
+						     aoIndex+10, aoIndex+11, aoIndex+12, aoIndex+13, aoIndex+14};
+			orbIndex++;
+			aoIndex += 15;
 		}
 	}
 
@@ -188,7 +212,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			orbIndex++;
 			aoIndex++;
 		}
-		aoIndex += 3*p[atom] + 5*d[atom] + 7*f[atom];
+		aoIndex += 3*p[atom] + 5*d[atom] + 7*f[atom] + 9*g[atom];
 	}
 	// second: all p orbitals
 	aoIndex = 0;
@@ -200,7 +224,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			orbIndex++;
 			aoIndex += 3;
 		}
-		aoIndex += 5*d[atom] + 7*f[atom];
+		aoIndex += 5*d[atom] + 7*f[atom] + 9*g[atom];
 	}
 	// third: d orbitals
 	aoIndex = 0;
@@ -212,7 +236,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			orbIndex++;
 			aoIndex += 5;
 		}
-		aoIndex += 7*f[atom];
+		aoIndex += 7*f[atom] + 9*g[atom];
 	}
 	// fourth: f orbitals
 	aoIndex = 0;
@@ -223,6 +247,18 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			returnMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4, aoIndex+5, aoIndex+6};
 			orbIndex++;
 			aoIndex += 7;
+		}
+		aoIndex += 9*g[atom];
+	}
+	// fifth: g-orbitals
+	aoIndex = 0;
+	for (int atom=0; atom<atomNum; atom++) {
+		aoIndex += s[atom]+3*p[atom]+5*d[atom]+7*f[atom]; // shift by s, p, d and f
+		// iterate over g-functions of current atom
+		for (int i=0; i<g[atom]; i++) {
+			returnMap[orbIndex] = {aoIndex, aoIndex+1, aoIndex+2, aoIndex+3, aoIndex+4, aoIndex+5, aoIndex+6, aoIndex+7, aoIndex+8};
+			orbIndex++;
+			aoIndex += 9;
 		}
 	}
 
@@ -236,9 +272,9 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	//	std::cout << "\n";
 	//}
 	
-	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize, sSize+3*pSize+6*dSize+10*fSize);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize+15*gSize, sSize+3*pSize+6*dSize+10*fSize+15*gSize);
 	int orbcounter = 0;
-	for (int i=1; i<sSize+pSize+dSize+fSize+1; i++) {
+	for (int i=1; i<sSize+pSize+dSize+fSize+gSize+1; i++) {
 		for (auto x: orbitalIndexMap[i]) {
 			//std::cout << x << "   ";
 			swapMat(orbcounter, x) = 1;
@@ -251,9 +287,9 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	// save swap matrix to file berryswap.r
 	std::ofstream swapfile;
 	swapfile.open("berryswap.r");
-	swapfile << sSize+3*pSize+6*dSize+10*fSize << "\n";
-	for (int i=0; i<sSize+3*pSize+6*dSize+10*fSize; i++) {
-		for (int j=0; j<sSize+3*pSize+6*dSize+10*fSize; j++) {
+	swapfile << sSize+3*pSize+6*dSize+10*fSize+15*gSize << "\n";
+	for (int i=0; i<sSize+3*pSize+6*dSize+10*fSize+15*gSize; i++) {
+		for (int j=0; j<sSize+3*pSize+6*dSize+10*fSize+15*gSize; j++) {
 			swapfile << std::fixed << std::setprecision(15) << swapMat(i, j).real() << "\n";
 		}
 	}
