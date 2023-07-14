@@ -82,48 +82,49 @@ int main(int argc, char* argv[]) {
 	
 	const auto spinorCAO = transMatBIG * spinor;
 	std::cout << "spinorCAO done: " << spinorCAO.rows() << " x " << spinorCAO.cols() << std::endl;
+	const int ncao = spinorCAO.rows()/2;
 
-	const auto smatC = readHerm("smatcao");
-	// reorder smatCAO
-	// read berryswap.r for reordering matrix
-	std::ifstream swapfile("berryswap.r");
-	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
-	getline(swapfile, line);
-	const int dims = std::stoi(line);
-	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
-	for (int i=0; i<dims; i++) {
-		for (int j=0; j<dims; j++) {
-			getline(swapfile, line);
-			swapMat(i, j) += std::stod(line);
-		}
-	}
-	swapfile.close();
-	const auto smatCAO = swapMat.transpose() * smatC * swapMat;
-	
-	Eigen::MatrixXcd smatCAOBIG(2*smatCAO.rows(), 2*smatCAO.cols());
-	smatCAOBIG << smatCAO, Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()),
-			Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()), smatCAO;
-	const auto hofident = spinorCAO.adjoint() * smatCAOBIG * spinorCAO;
-	bool iden = true;
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			if (i==j) {
-				if (abs(abs(hofident(i, j))-1.0) >= 1e-12) {
-					std::cout << "NOT IDENTITY!\n";
-					iden = false;
-					break;
-				}
-			} else {
-				if (abs(hofident(i, j)) >= 1e-12) {
-					std::cout << "NOT IDENTITY!\n";
-					iden = false;
-					break;
-				}
-			}
-		}
-	}
-	if (iden) std::cout << "caosao trafo worked!" << std::endl;
-	// end of CAO spinor test section
+	//const auto smatC = readHerm("smatcao");
+	//// reorder smatCAO
+	//// read berryswap.r for reordering matrix
+	//std::ifstream swapfile("berryswap.r");
+	//if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	//getline(swapfile, line);
+	//const int dims = std::stoi(line);
+	//Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	//for (int i=0; i<dims; i++) {
+	//	for (int j=0; j<dims; j++) {
+	//		getline(swapfile, line);
+	//		swapMat(i, j) += std::stod(line);
+	//	}
+	//}
+	//swapfile.close();
+	//const auto smatCAO = swapMat.transpose() * smatC * swapMat;
+	//
+	//Eigen::MatrixXcd smatCAOBIG(2*smatCAO.rows(), 2*smatCAO.cols());
+	//smatCAOBIG << smatCAO, Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()),
+	//		Eigen::MatrixXcd::Zero(smatCAO.rows(), smatCAO.cols()), smatCAO;
+	//const auto hofident = spinorCAO.adjoint() * smatCAOBIG * spinorCAO;
+	//bool iden = true;
+	//for (int i=0; i<spinorSize; i++) {
+	//	for (int j=0; j<spinorSize; j++) {
+	//		if (i==j) {
+	//			if (abs(abs(hofident(i, j))-1.0) >= 1e-12) {
+	//				std::cout << "NOT IDENTITY!\n";
+	//				iden = false;
+	//				break;
+	//			}
+	//		} else {
+	//			if (abs(hofident(i, j)) >= 1e-12) {
+	//				std::cout << "NOT IDENTITY!\n";
+	//				iden = false;
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
+	//if (iden) std::cout << "caosao trafo worked!" << std::endl;
+	//// end of CAO spinor test section
 
 
 
@@ -142,9 +143,10 @@ int main(int argc, char* argv[]) {
 
 
 	const auto begin2 = std::chrono::high_resolution_clock::now();
-	std::cout << "\n\ncalculating CPHF rhs vectors\n\n";
 	std::vector<Eigen::VectorXcd> ball;
-	split1efiles(atomNum);
+	splitExchange(atomNum, ncao);
+	split1efiles(atomNum, ncao);
+	std::cout << "\n\ncalculating CPHF rhs vectors\n\n" << std::flush;
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
 			const auto beginrhs = std::chrono::high_resolution_clock::now();

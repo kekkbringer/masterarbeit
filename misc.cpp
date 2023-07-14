@@ -446,6 +446,70 @@ Eigen::MatrixXcd readMatrix(std::string filename) {
 	return res.conjugate();
 }
 
+Eigen::MatrixXcd readCoulomb(std::string filename) {
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXcd transMat = Eigen::MatrixXcd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	
+
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+
+	using namespace std::complex_literals;
+
+	std::ifstream refile(filename + ".r");
+	std::ifstream imfile(filename + ".i");
+	if (refile.fail() or imfile.fail()) std::cout << "\n\n\nCOUND NOT READ FILE!!!\n\n\n";
+
+	std::string word, reline, imline;
+	double re, im;
+
+	getline(refile, line);
+	getline(imfile, line);
+	const int nlambda = std::stoi(line);
+	
+	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(nlambda, nlambda);
+
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(refile, reline);
+			getline(imfile, imline);
+			//res(i, j) = std::stod(reline) + std::stod(imline) * 1.0i;
+			try {res(i, j) += std::stod(reline);} catch (...) {}
+			try {res(i, j) += 1.0i * std::stod(imline);} catch (...) {}
+			if (i!=j) try {res(j, i) += std::stod(reline);} catch (...) {}
+			if (i!=j) try {res(j, i) -= 1.0i * std::stod(imline);} catch (...) {}
+		}
+	}
+
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
+	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+}
+
 Eigen::MatrixXcd readMatrixTransform(std::string filename) {
 	// read berrytrans.r for transformation matrix
 	std::ifstream transfile("berrytrans.r");
@@ -646,3 +710,63 @@ void deleteTmpFiles(const int natom) {
 	std::remove("wcao.r");
 	std::remove("wcao.i");
 }
+
+Eigen::MatrixXd readExchange(std::string filename, int c) {
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXd transMat = Eigen::MatrixXd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	
+
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXd swapMat = Eigen::MatrixXd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+
+	std::ifstream refile(filename + std::to_string(c));
+	if (refile.fail()) std::cout << "\n\n\nCOUND NOT READ FILE!!!\n\n\n";
+
+	std::string word, reline, imline;
+	double re, im;
+
+	getline(refile, line);
+	const int nlambda = std::stoi(line);
+	
+	Eigen::MatrixXd res = Eigen::MatrixXd::Zero(nlambda, nlambda);
+
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(refile, reline);
+			try {res(j, i) -= std::stod(reline);} catch (...) {}
+			if (i!=j) {
+				if (c==1 or c==2 or c==3 or c==4) try {res(i, j) -= std::stod(reline);} catch (...) {}
+				if (c==5 or c==6 or c==7 or c==8) try {res(i, j) += std::stod(reline);} catch (...) {}
+			}
+		}
+	}
+
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
+	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+}
+

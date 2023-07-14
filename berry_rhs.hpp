@@ -4,5 +4,6 @@
 
 #include "read_fourcenter.hpp"
 
-void split1efiles(int atomnum);
+void splitExchange(int atomNum, int ncao);
+void split1efiles(int atomnum, int ncao);
 Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd& ailkasym);

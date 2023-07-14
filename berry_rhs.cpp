@@ -18,7 +18,55 @@
 
 using namespace std::complex_literals;
 
-void split1efiles(int atomNum) {
+/*
+ * 1 Re(aa)
+ * 2 Re(ab+ba)
+ * 3 Im(ab+ba)
+ * 4 Re(bb)
+ * 5 Im(aa)
+ * 6 Re(ab-ba)
+ * 7 Im(ab-ba)
+ * 8 Im(bb)
+ *
+ * aa = 1 + i5
+ * bb = 4 + i8
+ * ab = 0.5*(2 + 6) + i0.5*(3 + 7)
+ * ba = 0.5*(2 - 6) + i0.5*(3 - 7)
+ **/
+void splitExchange(int atomNum, int ncao) {
+	const std::string cartDict[] = {"x", "y", "z"};
+
+	std::ifstream gxfock("gxfock");
+	if (gxfock.fail()) std::cout << "could not read gxfock!" << std::endl;
+	std::string line;
+
+	const int caoSize = ncao*(ncao+1)/2;
+
+	for (int c=1; c<=8; c++) {
+		getline(gxfock, line);
+		getline(gxfock, line);
+		getline(gxfock, line);
+		for (int I=0; I<atomNum; I++) {
+			for (int alpha=0; alpha<=2; alpha++) {
+				getline(gxfock, line);
+				getline(gxfock, line);
+				getline(gxfock, line);
+
+				std::ofstream fil("exch" + std::to_string(I) + cartDict[alpha] + std::to_string(c));
+				fil << ncao << "\n";
+
+				for (int i=0; i<caoSize; i++) {
+					getline(gxfock, line);
+					fil << line << "\n";
+				}
+
+				fil.close();
+			}
+		}
+	}
+}
+
+void split1efiles(int atomNum, int ncao) {
 	/*****************************************************************************
 	 *                             overlap and stuff                             *
 	 ****************************************************************************/
@@ -29,10 +77,16 @@ void split1efiles(int atomNum) {
 	std::ifstream sbraIm("sbra.i");
 	std::ifstream sketRe("sket.r");
 	std::ifstream sketIm("sket.i");
+	std::ifstream jfockRe("gjfock.r");
+	std::ifstream jfockIm("gjfock.i");
 	if (sbraRe.fail()) std::cout << "\nERROR reading some files!\n";
 	if (sbraIm.fail()) std::cout << "\nERROR reading some files!\n";
 	if (sketRe.fail()) std::cout << "\nERROR reading some files!\n";
 	if (sketIm.fail()) std::cout << "\nERROR reading some files!\n";
+	if (jfockRe.fail()) std::cout << "\nERROR reading some files!\n";
+	if (jfockIm.fail()) std::cout << "\nERROR reading some files!\n";
+
+	const int caoSize = ncao*(ncao+1)/2;
 
 	getline(sbraRe, line);
 	getline(sbraIm, line);
@@ -46,11 +100,12 @@ void split1efiles(int atomNum) {
 		std::ofstream bix("b" + std::to_string(i) + "x.i");
 		std::ofstream krx("k" + std::to_string(i) + "x.r");
 		std::ofstream kix("k" + std::to_string(i) + "x.i");
+		std::ofstream jfxr("jf" + std::to_string(i) + "x.r");
+		std::ofstream jfxi("jf" + std::to_string(i) + "x.i");
 		brx << size << "\n";
 		bix << size << "\n";
 		krx << size << "\n";
 		kix << size << "\n";
-		//for (int i=0; i<size; i++) {
 		for (int i=0; i<size*size; i++) {
 			getline(sbraRe, line);
 			brx << line << "\n";
@@ -61,6 +116,22 @@ void split1efiles(int atomNum) {
 			getline(sketIm, line);
 			kix << line << "\n";
 		}
+		jfxr << ncao << "\n";
+		jfxi << ncao << "\n";
+		getline(jfockRe, line);
+		getline(jfockRe, line);
+		getline(jfockRe, line);
+		getline(jfockIm, line);
+		getline(jfockIm, line);
+		getline(jfockIm, line);
+		for (int i=0; i<caoSize; i++) {
+			getline(jfockRe, line);
+			jfxr << line << "\n";
+			getline(jfockIm, line);
+			jfxi << line << "\n";
+		}
+		jfxi.close();
+		jfxr.close();
 		brx.close();
 		bix.close();
 		krx.close();
@@ -71,6 +142,8 @@ void split1efiles(int atomNum) {
 		std::ofstream biy("b" + std::to_string(i) + "y.i");
 		std::ofstream kry("k" + std::to_string(i) + "y.r");
 		std::ofstream kiy("k" + std::to_string(i) + "y.i");
+		std::ofstream jfyr("jf" + std::to_string(i) + "y.r");
+		std::ofstream jfyi("jf" + std::to_string(i) + "y.i");
 		bry << size << "\n";
 		biy << size << "\n";
 		kry << size << "\n";
@@ -86,6 +159,22 @@ void split1efiles(int atomNum) {
 			getline(sketIm, line);
 			kiy << line << "\n";
 		}
+		jfyr << ncao << "\n";
+		jfyi << ncao << "\n";
+		getline(jfockRe, line);
+		getline(jfockRe, line);
+		getline(jfockRe, line);
+		getline(jfockIm, line);
+		getline(jfockIm, line);
+		getline(jfockIm, line);
+		for (int i=0; i<caoSize; i++) {
+			getline(jfockRe, line);
+			jfyr << line << "\n";
+			getline(jfockIm, line);
+			jfyi << line << "\n";
+		}
+		jfyi.close();
+		jfyr.close();
 		bry.close();
 		biy.close();
 		kry.close();
@@ -96,6 +185,8 @@ void split1efiles(int atomNum) {
 		std::ofstream biz("b" + std::to_string(i) + "z.i");
 		std::ofstream krz("k" + std::to_string(i) + "z.r");
 		std::ofstream kiz("k" + std::to_string(i) + "z.i");
+		std::ofstream jfzr("jf" + std::to_string(i) + "z.r");
+		std::ofstream jfzi("jf" + std::to_string(i) + "z.i");
 		brz << size << "\n";
 		biz << size << "\n";
 		krz << size << "\n";
@@ -111,11 +202,29 @@ void split1efiles(int atomNum) {
 			getline(sketIm, line);
 			kiz << line << "\n";
 		}
+		jfzr << ncao << "\n";
+		jfzi << ncao << "\n";
+		getline(jfockRe, line);
+		getline(jfockRe, line);
+		getline(jfockRe, line);
+		getline(jfockIm, line);
+		getline(jfockIm, line);
+		getline(jfockIm, line);
+		for (int i=0; i<caoSize; i++) {
+			getline(jfockRe, line);
+			jfzr << line << "\n";
+			getline(jfockIm, line);
+			jfzi << line << "\n";
+		}
+		jfzi.close();
+		jfzr.close();
 		brz.close();
 		biz.close();
 		krz.close();
 		kiz.close();
 	}
+	jfockRe.close();
+	jfockIm.close();
 	sbraRe.close();
 	sbraIm.close();
 	sketRe.close();
@@ -508,69 +617,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	zetotnx += zynx;
 	zetotnx += zznx;
 
-	//std::cout << "\n\ndFock-Zeeman-SAO-x/dNx:\n" << std::fixed << std::setprecision(6) << zxnx << "\n";
-	//std::cout << "\n\ndFock-Zeeman-SAO-y/dNx:\n" << std::fixed << std::setprecision(6) << zynx << "\n";
-	//std::cout << "\n\ndFock-Zeeman-SAO-z/dNx:\n" << std::fixed << std::setprecision(6) << zznx << "\n";
-
-	
-
-	// ==================================== fourcenter ===================================
-
-	// double dim of fci
-	//auto fci = readFourcenter();
-	//auto fci = fciAlt(nuc, cart, lower, upper);
-	//fourD fciD(spinorSize,
-	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
-	//				std::vector<std::complex<double>>(spinorSize))));
-
-	//fourD fciBig(spinorSize,
-	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
-	//				std::vector<std::complex<double>>(spinorSize))));
-
-	//for (int i=0; i<spinorSize; i++) {
-	//	for (int j=0; j<spinorSize; j++) {
-	//		for (int k=0; k<spinorSize; k++) {
-	//			for (int l=0; l<spinorSize; l++) {
-	//				fciD[i][j][k][l] = (0, 0);
-	//				//fciBig[i][j][k][l] = (0, 0);
-	//			}
-	//		}
-	//	}
-	//}
-	//for (int i=0; i<spinorSize/2; i++) {
-	//	for (int j=0; j<spinorSize/2; j++) {
-	//		for (int k=0; k<spinorSize/2; k++) {
-	//			for (int l=0; l<spinorSize/2; l++) {
-	//				fciD[i][j][k][l] = fci[i][j][k][l];
-	//				fciD[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-	//				fciD[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-	//				fciD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-
-	//				// exchange war richtig mit 1, 16, 6, 11
-        //                                //fciBig[i][j][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i][j][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k][l+spinorSize/2] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l] = fci[i][j][k][l];
-        //                                //fciBig[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fci[i][j][k][l];
-	//			}
-	//		}
-	//	}
-	//}
-
-
 
 	// fourcenter derivatives in SAO basis
 	const auto beginread = std::chrono::high_resolution_clock::now();
@@ -627,97 +673,12 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	const auto hmatkek = hmatBig;
 	hmatBig = spinor.adjoint() * hmatBig * spinor;
 
-	// calculate 1e energy
-	//std::complex<double> e1 = 0;
-	//for (int a=0; a<nocc; a++) {
-	//	e1 += hmatBig(a, a);
-	//}
-	
-
 	// derivative
 	Eigen::MatrixXcd hnxBig(spinorSize, spinorSize);
 	hnxBig << hnx.conjugate(), Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 		Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hnx.conjugate();
 	fnx += hnxBig.transpose();
 
-
-
-
-
-	// ==================================== nuc-nuc interaction ===================================
-
-	// calculate electric potential energy of nuclei
-	//double enuc = 0.0;
-	//for (int i=0; i<atomNum; i++) {
-	//	for (int j=0; j<atomNum; j++) {
-	//		if (i==j) continue;
-	//		enuc += chargeOf(atoms[i]) * chargeOf(atoms[j])
-	//			/ sqrt(  (coordx[i]-coordx[j])*(coordx[i]-coordx[j])
-	//			   + (coordy[i]-coordy[j])*(coordy[i]-coordy[j])
-	//			   + (coordz[i]-coordz[j])*(coordz[i]-coordz[j])  );
-	//	}
-	//}
-	//enuc *= 0.5;
-
-
-	// derivatives
-	//double enucnx[atomNum][3];
-	//// x derivatives
-	//for (int a=0; a<atomNum; a++) {
-	//	enucnx[a][0] = 0.0;
-	//	for (int b=0; b<atomNum; b++) {
-	//		if (a==b) continue;
-	//		double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
-	//			   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
-	//			   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
-	//		enucnx[a][0] += chargeOf(atoms[b]) * (coordx[b] - coordx[a]) / rab3;
-	//	}
-	//	enucnx[a][0] *= chargeOf(atoms[a]);
-	//}
-	//// y derivatives
-	//for (int a=0; a<atomNum; a++) {
-	//	enucnx[a][1] = 0.0;
-	//	for (int b=0; b<atomNum; b++) {
-	//		if (a==b) continue;
-	//		double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
-	//			   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
-	//			   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
-	//		enucnx[a][1] += chargeOf(atoms[b]) * (coordy[b] - coordy[a]) / rab3;
-	//	}
-	//	enucnx[a][1] *= chargeOf(atoms[a]);
-	//}
-	//// z derivatives
-	//for (int a=0; a<atomNum; a++) {
-	//	enucnx[a][2] = 0.0;
-	//	for (int b=0; b<atomNum; b++) {
-	//		if (a==b) continue;
-	//		double rab3 = pow( (coordx[a]-coordx[b])*(coordx[a]-coordx[b])
-	//			   + (coordy[a]-coordy[b])*(coordy[a]-coordy[b])
-	//			   + (coordz[a]-coordz[b])*(coordz[a]-coordz[b]), 1.5);
-	//		enucnx[a][2] += chargeOf(atoms[b]) * (coordz[b] - coordz[a]) / rab3;
-	//	}
-	//	enucnx[a][2] *= chargeOf(atoms[a]);
-	//}
-
-	/* print derivatives d(Vnn)/dNx
-	std::cout << "\nderivatives of Vnn:\n";
-	for (int a=0; a<atomNum; a++) {
-		std::cout << enucnx[a][0] << "   " << enucnx[a][1] << "   " << enucnx[a][2] << "\n";
-	}
-	//*/
-
-
-
-
-	// ==================================== small debug print ===================================
-
-	//std::cout << std::setprecision(10);
-	//std::cout << "enuc: " << enuc << "\n";
-	//std::cout << "1e energy: " << e1.real() << "\n";
-	//std::cout << "spin-Zeeman energy x: " << eSpinZeemanX.real() << "\n";
-	//std::cout << "spin-Zeeman energy y: " << eSpinZeemanY.real() << "\n";
-	//std::cout << "spin-Zeeman energy z: " << eSpinZeemanZ.real() << "\n";
-	//std::cout << "total 1e: " << (e1 + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ).real() << "\n";
 
 
 
@@ -735,20 +696,70 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//	Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hmat;
 	auto begin2 = std::chrono::high_resolution_clock::now();
 	std::cout << "\tcalculating derivative of G..." << std::flush;
+	std::cout << "\n";
 	for (int k=0; k<spinorSize; k++) {
 		for (int l=0; l<spinorSize; l++) {
 			for (int m=0; m<spinorSize; m++) {
 				for (int n=0; n<spinorSize; n++) {
-					//C(k, l) += denMat(n, m) * fciD[k][l][m][n];
-					//K(k, l) -= denMat(n, m) * fciD[k][n][m][l];
-					//Cnx(k, l) += denMat(n, m) * std::conj(fcinxD[k][l][m][n]);
-					//Knx(k, l) -= denMat(n, m) * std::conj(fcinxD[k][n][m][l]);
 					Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
 					Knx(k, l) -= denMat(n, m) * fcinxD[k][n][m][l];
 				}
 			}
 		}
 	}
+	std::cout << "\n";
+
+	// read Coulomb derivative
+	const auto Jnxread = readCoulomb("jf" + std::to_string(nuc) + cartDict[cart]);
+	auto diff = Jnxread - Cnx.block(0, 0, spinorSize/2, spinorSize/2);
+	double diffmax = -1.0;
+	for (int i=0; i<spinorSize/2; i++) {
+		for (int j=0; j<spinorSize/2; j++) {
+			diffmax = std::max(diffmax, abs(diff(i, j)));
+		}
+	}
+	std::cout << " --------------->  diffmax coul = " << diffmax << "\n";
+
+	//std::cout << "\ndJ/dIa real:\n" << std::fixed << std::setprecision(5) << Cnx.real() << "\n";
+	//std::cout << "\nJnx read real:\n" << std::fixed << std::setprecision(5) << Jnxread.real() << "\n";
+	//std::cout << "\ndJ/dIa imag:\n" << std::fixed << std::setprecision(5) << Cnx.imag() << "\n";
+	//std::cout << "\nJnx read imag:\n" << std::fixed << std::setprecision(5) << Jnxread.imag() << "\n";
+
+	const auto Knx1 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 1);
+	const auto Knx2 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 2);
+	const auto Knx3 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 3);
+	const auto Knx4 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 4);
+	const auto Knx5 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 5);
+	const auto Knx6 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 6);
+	const auto Knx7 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 7);
+	const auto Knx8 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 8);
+
+	Eigen::MatrixXcd Knxread(spinorSize, spinorSize);
+	Knxread.block(0, 0, spinorSize/2, spinorSize/2).real() = Knx1;				// Re aa
+	Knxread.block(0, 0, spinorSize/2, spinorSize/2).imag() = Knx5;				// Im aa
+	Knxread.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2).real() = Knx4;	// Re bb
+	Knxread.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2).imag() = Knx8;	// Im bb
+	Knxread.block(0, spinorSize/2, spinorSize/2, spinorSize/2).real() = 0.5*(Knx2 + Knx6);	// Re ab
+	Knxread.block(0, spinorSize/2, spinorSize/2, spinorSize/2).imag() = 0.5*(Knx3 + Knx7);	// Im ab
+	Knxread.block(spinorSize/2, 0, spinorSize/2, spinorSize/2).real() = 0.5*(Knx2 - Knx6);	// Re ba
+	Knxread.block(spinorSize/2, 0, spinorSize/2, spinorSize/2).imag() = 0.5*(Knx3 - Knx7);	// Im ba
+												
+	//std::cout << "\ndK/dIa real:\n" << std::fixed << std::setprecision(5) << Knx.real() << "\n";
+	//std::cout << "\ndK/dIa real read:\n" << std::fixed << std::setprecision(5) << Knxread.real() << "\n";
+	//std::cout << "\ndK/dIa imag:\n" << std::fixed << std::setprecision(5) << Knx.imag() << "\n";
+	//std::cout << "\ndK/dIa imag read:\n" << std::fixed << std::setprecision(5) << Knxread.imag() << "\n";
+	std::cout << std::defaultfloat;
+	
+	const auto diffex = Knx - Knxread;
+	diffmax = -1.0;
+	for (int i=0; i<spinorSize; i++) {
+		for (int j=0; j<spinorSize; j++) {
+			diffmax = std::max(diffmax, abs(diffex(i, j)));
+		}
+	}
+	std::cout << " --------------->  diffmax exch = " << diffmax << "\n";
+
+
 	auto end2 = std::chrono::high_resolution_clock::now();
 	auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2-begin2);
 	printf(" done after %.3fs\n", elapsed2.count()*1e-3);
@@ -764,39 +775,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	fnx += Cnx.transpose();
 	fnx += Knx.transpose();
 	std::cout << " done.\n" << std::flush;
-	//const auto fockNeu = spinor.adjoint() * fockSAO * spinor;
-	//const auto Cspinor = spinor.adjoint() * C.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	//const auto Kspinor = spinor.adjoint() * K.transpose() * spinor;// + zeemanx + zeemany + zeemanz;
-	//const auto fock = hmatBig + Cspinor + Kspinor + zeemanx + zeemany + zeemanz;
-	//std::cout << "fock:\n" << fock << "\n\n";
-	//for (int i=0; i<nocc; i++) {
-	//	std::cout << "orbital energy " << i << ": " << fock(i, i) << "\n";
-	//	std::cout << "orbital energy " << i << ": " << fockNeu(i, i) << "\n";
-	//}
-	//std::cout << "\n";
-
-
-	// calculate energy weighted density matrix W
-	//std::cout << "calculating energy weighted density matrix...\n";
-	//Eigen::MatrixXcd W = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//for (int a=0; a<spinorSize; a++) {
-	//	for (int b=0; b<spinorSize; b++) {
-	//		//for (int c=0; c<spinorSize; c++) {
-	//		//	for (int d=0; d<spinorSize; d++) {
-	//		//		W(a, b) += denMat(c, a) * fockSAO(c, d) * denMat(b, d);
-	//		//	}
-	//		//}
-	//		for (int i=0; i<nocc; i++) {
-	//			W(a, b) += epsilon[i] * std::conj(spinor(a, i)) * spinor(b, i);
-	//			//W(a, b) += fock(i, i) * std::conj(spinor(a, i)) * spinor(b, i);
-	//		}
-	//	}
-	//}
-
-	//std::cout << "fock spinor basis:\n" << fock << "\n\n";
-	//std::cout << "W:\n" << W << "\n\n";
-
-
 
 
 
@@ -810,488 +788,13 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 
 	// transpose fnx
 	fnx.transposeInPlace();
-	
 
-	std::complex<double> gradW = 0.0;
-	std::complex<double> gradF = 0.0;
-	//std::complex<double> gradWa = 0.0;
-	//std::complex<double> gradHa = 0.0;
-	//std::complex<double> gradCa = 0.0;
-	//std::complex<double> gradKa = 0.0;
-	//std::complex<double> gradZa = 0.0;
-	//std::complex<double> etot = 0.0;
-	//std::complex<double> ec = 0.0;
-	//std::complex<double> ej = 0.0;
-	for (int a=0; a<spinorSize; a++) {
-		for (int b=0; b<spinorSize; b++) {
-			//grad += hnxBig(a, b) * denMat(b, a);
-			//grad -= 2.0 * snxBig(a, b) * W(b, a);
-			
-			//gradW -= W(b, a) * snxBig(a, b);
-			//gradF += 0.5 * denMat(b, a) * (fnx(a, b) + hnxBig(a, b) + zetotnx(a, b));
-
-			//gradHa += denMat(b, a) * hnxBig(a, b);
-			//gradWa -= W(b, a) * snxBig(a, b);
-			//gradZa += denMat(b, a) * zetotnx(a, b);
-
-			//etot += denMat(a, b) * hmatkek(a, b);
-		}
-	}
-
-	/*
-	std::complex<double> grad2e = 0.0;
-	for (int a=0; a<spinorSize; a++) {
-		for (int b=0; b<spinorSize; b++) {
-			for (int c=0; c<spinorSize; c++) {
-				for (int d=0; d<spinorSize; d++) {
-					//grad += fcinxD[a][b][c][d] * denMat(a, b) * denMat(c, d);
-					gradCa += 0.5 * denMat(b, a) * denMat(d, c) * fcinxD[a][b][c][d];
-					gradKa -= 0.5 * denMat(b, a) * denMat(d, c) * fcinxD[a][d][c][b];
-					
-					etot += 0.5 * denMat(b, a) * denMat(d, c) * fciD[a][b][c][d];
-					etot -= 0.5 * denMat(b, a) * denMat(d, c) * fciD[a][d][c][b];
-					ec += 0.5 * denMat(b, a) * denMat(d, c) * fciD[a][b][c][d];
-					ej -= 0.5 * denMat(b, a) * denMat(d, c) * fciD[a][d][c][b];
-				}
-			}
-		}
-	}
-	etot += enuc + eSpinZeemanX + eSpinZeemanY + eSpinZeemanZ;
-	//*/
-
-	//std::cout << "total:                  " << gradW + gradF + enucnx[nuc][cart] << "\n";
-	//std::cout << "\n\nalternativer weg:\n";
-	//std::cout << "total:   " << gradHa + gradWa + gradCa + gradKa + gradZa + enucnx[nuc][cart] << "\n";
-	
-	
-
-	/*****************************************************************************
-	 *                         construct rhs of HX=b                             *
-	 ****************************************************************************/
-	/*
-	fourD tmpa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmpb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp2aa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp2ab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp2ba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp2bb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3aaa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3aab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3aba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3abb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3baa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3bab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3bba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD tmp3bbb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralaaaa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralaaab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralaaba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralaabb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralabaa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralabab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralabba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralabbb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbaaa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbaab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbaba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbabb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbbaa(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbbab(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbbba(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-	fourD fourCenterIntegralbbbb(spinorSize/2,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize/2,
-				std::vector<std::vector<std::complex<double>>>(spinorSize/2,
-					std::vector<std::complex<double>>(spinorSize/2))));
-
-
-	std::cout << "      first transformation..." << std::flush;
-	// first transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int nu=0; nu<spinorSize/2; nu++) {
-			for (int lam=0; lam<spinorSize/2; lam++) {
-				for (int sig=0; sig<spinorSize/2; sig++) {
-					tmpa[i][nu][lam][sig] = 0;
-					tmpb[i][nu][lam][sig] = 0;
-					for (int mu=0; mu<spinorSize/2; mu++) {
-						tmpa[i][nu][lam][sig] += spinor(mu,              i) * fciBig[mu][nu][lam][sig];
-						tmpb[i][nu][lam][sig] += spinor(mu, i+spinorSize/2) * fciBig[mu][nu][lam][sig];
-					}
-				}
-			}
-		}
-	}
-	std::cout << " done.\n" << std::flush;
-
-	std::cout << "      second transformation..." << std::flush;
-	// second transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int lam=0; lam<spinorSize/2; lam++) {
-				for (int sig=0; sig<spinorSize/2; sig++) {
-					tmp2aa[i][j][lam][sig] = 0;
-					tmp2ab[i][j][lam][sig] = 0;
-					tmp2ba[i][j][lam][sig] = 0;
-					tmp2bb[i][j][lam][sig] = 0;
-					for (int nu=0; nu<spinorSize/2; nu++) {
-						tmp2aa[i][j][lam][sig] += std::conj(spinor(nu,              j)) * tmpa[i][nu][lam][sig];
-						tmp2ab[i][j][lam][sig] += std::conj(spinor(nu, j+spinorSize/2)) * tmpa[i][nu][lam][sig];
-						tmp2ba[i][j][lam][sig] += std::conj(spinor(nu,              j)) * tmpb[i][nu][lam][sig];
-						tmp2bb[i][j][lam][sig] += std::conj(spinor(nu, j+spinorSize/2)) * tmpb[i][nu][lam][sig];
-					}
-				}
-			}
-		}
-	}
-	std::cout << " done.\n" << std::flush;
-
-	std::cout << "      third transformation..." << std::flush;
-	// third transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int k=0; k<spinorSize/2; k++) {
-				for (int sig=0; sig<spinorSize/2; sig++) {
-					tmp3aaa[i][j][k][sig] = 0;
-					tmp3aab[i][j][k][sig] = 0;
-					tmp3aba[i][j][k][sig] = 0;
-					tmp3abb[i][j][k][sig] = 0;
-					tmp3baa[i][j][k][sig] = 0;
-					tmp3bab[i][j][k][sig] = 0;
-					tmp3bba[i][j][k][sig] = 0;
-					tmp3bbb[i][j][k][sig] = 0;
-					for (int lam=0; lam<spinorSize/2; lam++) {
-						tmp3aaa[i][j][k][sig] += spinor(lam,              k) * tmp2aa[i][j][lam][sig];
-						tmp3aab[i][j][k][sig] += spinor(lam, k+spinorSize/2) * tmp2aa[i][j][lam][sig];
-						tmp3aba[i][j][k][sig] += spinor(lam,              k) * tmp2ab[i][j][lam][sig];
-						tmp3abb[i][j][k][sig] += spinor(lam, k+spinorSize/2) * tmp2ab[i][j][lam][sig];
-						tmp3baa[i][j][k][sig] += spinor(lam,              k) * tmp2ba[i][j][lam][sig];
-						tmp3bab[i][j][k][sig] += spinor(lam, k+spinorSize/2) * tmp2ba[i][j][lam][sig];
-						tmp3bba[i][j][k][sig] += spinor(lam,              k) * tmp2bb[i][j][lam][sig];
-						tmp3bbb[i][j][k][sig] += spinor(lam, k+spinorSize/2) * tmp2bb[i][j][lam][sig];
-					}
-				}
-			}
-		}
-	}
-	std::cout << " done.\n" << std::flush;
-
-	std::cout << "      fourth transformation..." << std::flush;
-	// fourth transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int k=0; k<spinorSize/2; k++) {
-				for (int l=0; l<spinorSize/2; l++) {
-					fourCenterIntegralaaaa[i][j][k][l] = 0;
-					fourCenterIntegralaaab[i][j][k][l] = 0;
-					fourCenterIntegralaaba[i][j][k][l] = 0;
-					fourCenterIntegralaabb[i][j][k][l] = 0;
-					fourCenterIntegralabaa[i][j][k][l] = 0;
-					fourCenterIntegralabab[i][j][k][l] = 0;
-					fourCenterIntegralabba[i][j][k][l] = 0;
-					fourCenterIntegralabbb[i][j][k][l] = 0;
-					fourCenterIntegralbaaa[i][j][k][l] = 0;
-					fourCenterIntegralbaab[i][j][k][l] = 0;
-					fourCenterIntegralbaba[i][j][k][l] = 0;
-					fourCenterIntegralbabb[i][j][k][l] = 0;
-					fourCenterIntegralbbaa[i][j][k][l] = 0;
-					fourCenterIntegralbbab[i][j][k][l] = 0;
-					fourCenterIntegralbbba[i][j][k][l] = 0;
-					fourCenterIntegralbbbb[i][j][k][l] = 0;
-					for (int sig=0; sig<spinorSize/2; sig++) {
-						fourCenterIntegralaaaa[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3aaa[i][j][k][sig];
-						fourCenterIntegralaaab[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3aaa[i][j][k][sig];
-						fourCenterIntegralaaba[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3aab[i][j][k][sig];
-						fourCenterIntegralaabb[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3aab[i][j][k][sig];
-						fourCenterIntegralabaa[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3aba[i][j][k][sig];
-						fourCenterIntegralabab[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3aba[i][j][k][sig];
-						fourCenterIntegralabba[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3abb[i][j][k][sig];
-						fourCenterIntegralabbb[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3abb[i][j][k][sig];
-						fourCenterIntegralbaaa[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3baa[i][j][k][sig];
-						fourCenterIntegralbaab[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3baa[i][j][k][sig];
-						fourCenterIntegralbaba[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3bab[i][j][k][sig];
-						fourCenterIntegralbabb[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3bab[i][j][k][sig];
-						fourCenterIntegralbbaa[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3bba[i][j][k][sig];
-						fourCenterIntegralbbab[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3bba[i][j][k][sig];
-						fourCenterIntegralbbba[i][j][k][l] += std::conj(spinor(sig,              l)) * tmp3bbb[i][j][k][sig];
-						fourCenterIntegralbbbb[i][j][k][l] += std::conj(spinor(sig, l+spinorSize/2)) * tmp3bbb[i][j][k][sig];
-					}
-				}
-			}
-		}
-	}
-	//std::cout << " done.\n" << std::flush;
-	//std::cout << "\n" << std::flush;
-	//*/
-	
-	/*
-	fourD xtmp(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	fourD xtmp2(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	fourD xtmp3(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	fourD xfourCenterIntegral(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-
-	fourD tmp(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	fourD tmp2(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	fourD tmp3(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	fourD fourCenterIntegral(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
-
-	//IFDBG std::cout << "\n";
-	std::cout << "      first transformation..." << std::flush;
-	// first transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize; i++) {
-		for (int nu=0; nu<spinorSize; nu++) {
-			for (int lam=0; lam<spinorSize; lam++) {
-				for (int sig=0; sig<spinorSize; sig++) {
-					tmp[i][nu][lam][sig] = 0;
-					for (int mu=0; mu<spinorSize; mu++) {
-						tmp[i][nu][lam][sig] += spinor(mu, i) * fciD[mu][nu][lam][sig];
-						//tmp[i][nu][lam][sig] += std::conj(spinor(mu, i)) * fciD[mu][nu][lam][sig];
-						//xtmp[i][nu][lam][sig] += spinor(mu, i) * fciBig[mu][nu][lam][sig];
-					}
-				}
-			}
-		}
-	}
-	std::cout << " done.\n" << std::flush;
-
-	std::cout << "      second transformation..." << std::flush;
-	// second transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int lam=0; lam<spinorSize; lam++) {
-				for (int sig=0; sig<spinorSize; sig++) {
-					tmp2[i][j][lam][sig] = 0;
-					for (int nu=0; nu<spinorSize; nu++) {
-						tmp2[i][j][lam][sig] += std::conj(spinor(nu, j)) * tmp[i][nu][lam][sig];
-						//tmp2[i][j][lam][sig] += spinor(nu, j) * tmp[i][nu][lam][sig];
-						//xtmp2[i][j][lam][sig] += std::conj(spinor(nu, j)) * xtmp[i][nu][lam][sig];
-					}
-				}
-			}
-		}
-	}
-	std::cout << " done.\n" << std::flush;
-
-	std::cout << "      third transformation..." << std::flush;
-	// third transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int k=0; k<spinorSize; k++) {
-				for (int sig=0; sig<spinorSize; sig++) {
-					tmp3[i][j][k][sig] = 0;
-					for (int lam=0; lam<spinorSize; lam++) {
-						tmp3[i][j][k][sig] += spinor(lam, k) * tmp2[i][j][lam][sig];
-						//tmp3[i][j][k][sig] += std::conj(spinor(lam, k)) * tmp2[i][j][lam][sig];
-						//xtmp3[i][j][k][sig] += spinor(lam, k) * xtmp2[i][j][lam][sig];
-					}
-				}
-			}
-		}
-	}
-	std::cout << " done.\n" << std::flush;
-
-	std::cout << "      fourth transformation..." << std::flush;
-	// fourth transformation
-	#pragma omp parallel for collapse(4)
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int k=0; k<spinorSize; k++) {
-				for (int l=0; l<spinorSize; l++) {
-					fourCenterIntegral[i][j][k][l] = 0;
-					for (int sig=0; sig<spinorSize; sig++) {
-						fourCenterIntegral[i][j][k][l] += std::conj(spinor(sig, l)) * tmp3[i][j][k][sig];
-						//fourCenterIntegral[i][j][k][l] += spinor(sig, l) * tmp3[i][j][k][sig];
-						//xfourCenterIntegral[i][j][k][l] += std::conj(spinor(sig, l)) * xtmp3[i][j][k][sig];
-					}
-				}
-			}
-		}
-	}
-	//std::cout << " done.\n" << std::flush;
-	//std::cout << "\n" << std::flush;
-	//*/
 
 	const size_t nvirt = spinorSize - nocc;
 	Eigen::VectorXcd b0ai = Eigen::VectorXcd::Zero(nocc*nvirt);
 
-	//const auto fnx2cMO = spinor.adjoint() * fnx * spinor;
 	const auto fnx2cMO = spinor.adjoint() * fnx.conjugate() * spinor;
-	//const auto snx2cMO = spinor.adjoint() * snxBig * spinor;
 	const auto snx2cMO = spinor.adjoint() * snxBig.conjugate() * spinor;
-
-	//// to be deleted
-	//Eigen::MatrixXcd smatBig = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//smatBig << smat, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
-	//	   Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2) , smat;
-
-	//auto dmatSpinor = spinor.adjoint() * smatBig * denMat * smatBig * spinor;
-
-	//Eigen::MatrixXcd Calternative = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//Eigen::MatrixXcd Kalternative = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//const int thresh = spinorSize/2;
-	//for (int p=0; p<spinorSize; p++) {
-	//	for (int q=0; q<spinorSize; q++) {
-	//		for (int r=0; r<spinorSize; r++) {
-	//			for (int s=0; s<spinorSize; s++) {
-	//				Calternative(p, q) += fourCenterIntegral[p][q][r][s] * dmatSpinor(r, s);
-	//				Kalternative(p, q) -= fourCenterIntegral[p][s][r][q] * dmatSpinor(r, s);
-	//			}
-	//		}
-	//	}
-	//}
-	//// end to be deleted
 
 
 	//std::cout << "\n\n";
@@ -1321,46 +824,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << std::defaultfloat;
 
 
-	// fock debug
-	//auto cplus  = readNumSpinor("TEST5/" + std::to_string(3*nuc+cart+1) + "IPlus.out");
-	//auto cminus = readNumSpinor("TEST5/" + std::to_string(3*nuc+cart+1) + "IMinus.out");
-	//const auto hmat0 = readHerm("hmat");
-	//const auto hmatplus = readHerm(std::to_string(nuc) + "_" + cartDict[cart] + "plus/hmat");
-	//const auto hmatminus = readHerm(std::to_string(nuc) + "_" + cartDict[cart] + "minus/hmat");
-	//Eigen::MatrixXcd hmatplusBig(spinorSize, spinorSize);
-	//hmatplusBig << hmatplus, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), hmatplus;
-	//Eigen::MatrixXcd hmatminusBig(spinorSize, spinorSize);
-	//hmatminusBig << hmatminus, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), hmatminus;
-	//auto fnxNum = (hmatplusBig - hmatminusBig) / 2e-3;
-	////auto fnxNum = spinor.adjoint() * ((hmatplusBig - hmatminusBig) / 2e-3) * spinor;
-
-	//std::cout << std::fixed << std::setprecision(8) << "\nfnxNum:\n" << fnxNum << "\n";
-	//std::cout << "\n\n";
-
-
-	//std::cout << "nocc: " << nocc << "\n";
-	//std::cout << "nvirt: " << nvirt << "\n";
-
-	//auto antisym = [&](int i, int j, int k, int l) { return fourCenterIntegral[i][k][j][l] - fourCenterIntegral[i][l][j][k]; };
-	
-	// lets calc mp2 energy
-	//std::complex<double> emp2 = 0.0;
-	//for (int i=0; i<nocc; i++) {
-	//	for (int j=0; j<nocc; j++) {
-	//		for (int a=nocc; a<spinorSize; a++) {
-	//			for (int b=nocc; b<spinorSize; b++) {
-	//				std::complex<double> t = (fourCenterIntegral[i][a][j][b] - xfourCenterIntegral[i][b][j][a]) * (fourCenterIntegral[i][a][j][b] - xfourCenterIntegral[i][b][j][a])
-	//					/ (epsilon[a] + epsilon[b] - epsilon[i] - epsilon[j]);
-	//				//double t = (fourCenterIntegral[i][b][j][a]) * (fourCenterIntegral[i][b][j][a])
-	//				std::cout << "contribution to emp2: " << t << "\n";
-	//				emp2 += t;
-	//			}
-	//		}
-	//	}
-	//}
-	//emp2 *= -0.25;
-	//std::cout << "\n\n\nMP2-energy???   " << emp2 << "\n\n";
-	
 
 	// constructing snxVector
 	Eigen::VectorXcd snxVec(nocc*nocc);
@@ -1372,22 +835,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 
 	auto begin = std::chrono::high_resolution_clock::now();
 	std::cout << "\tputting RHS together..." << std::flush;
-	//for (int i=0; i<nocc; i++) {
-	//	for (int a=nocc; a<spinorSize; a++) {
-	//		const int index = i*nvirt + a - nocc;
-	//		b0ai(index) = -fnx2cMO(a, i); // so soll es "eigentlich" sein...
-	//		for (int j=0; j<nocc; j++) {
-	//			//b0ai(index) += snx2cMO(a, j) * fock(j, i);
-	//		}
-	//		b0ai(index) += snx2cMO(a, i) * epsilon[i]; // so soll es "eigentlich" sein...
-	//		for (int k=0; k<nocc; k++) {
-	//			for (int l=0; l<nocc; l++) {
-	//				b0ai(index) += snx2cMO(k, l) * std::conj(fourCenterIntegral[a][i][l][k]);
-	//				b0ai(index) -= snx2cMO(k, l) * std::conj(fourCenterIntegral[a][k][l][i]);
-	//			}
-	//		}
-	//	}
-	//}
 	for (int i=0; i<nocc; i++) {
 		for (int a=nocc; a<spinorSize; a++) {
 			const int index = i*nvirt + a - nocc;
@@ -1400,11 +847,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 		for (int k=0; k<nocc; k++) {
 			for (int l=0; l<nocc; l++) {
 				for (int a=nocc; a<spinorSize; a++) {
-					//b0ai(i*nvirt + a - nocc) += snx2cMO(k, l) * /* std::conj*/(fourCenterIntegral[a][i][l][k]);
-					//b0ai(i*nvirt + a - nocc) -= snx2cMO(k, l) * /* std::conj*/(fourCenterIntegral[a][k][l][i]);
-					
-					//b0ai(i*nvirt + a - nocc) += snx2cMO(k, l) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
-					
 					b0ai(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
 				}
 			}
@@ -1415,9 +857,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	printf("\ttotal done after %.3fs\n", elapsed.count()*1e-3);
 	std::cout << std::flush;
 
-	//std::cout << std::fixed << std::setprecision(8) << "\nb:\n" << b0ai << "\n";
-	std::cout << std::defaultfloat;
-	
 	// write b0ai to file
 	std::ofstream outRe("b0ai" + std::to_string(nuc) + "_" + std::to_string(cart) + ".r");
 	std::ofstream outIm("b0ai" + std::to_string(nuc) + "_" + std::to_string(cart) + ".i");
