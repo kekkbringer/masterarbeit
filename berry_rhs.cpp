@@ -621,44 +621,44 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// fourcenter derivatives in SAO basis
 	const auto beginread = std::chrono::high_resolution_clock::now();
 	std::cout << std::flush << "\treading g4c..." << std::flush;
-	const auto fcinx = fciAlt(nuc, cart);
-	const auto endread = std::chrono::high_resolution_clock::now();
-	const auto elapsedread = std::chrono::duration_cast<std::chrono::milliseconds>(endread-beginread);
-	std::cout << "\tdone reading after " << elapsedread.count()*1e-3 << " s\n\n";
-	std::cout << "\tcalculating 2e part of gradient...\n" << std::flush;
+	//const auto fcinx = fciAlt(nuc, cart);
+	//const auto endread = std::chrono::high_resolution_clock::now();
+	//const auto elapsedread = std::chrono::duration_cast<std::chrono::milliseconds>(endread-beginread);
+	//std::cout << "\tdone reading after " << elapsedread.count()*1e-3 << " s\n\n";
+	//std::cout << "\tcalculating 2e part of gradient...\n" << std::flush;
 
-	auto begin1 = std::chrono::high_resolution_clock::now();
-	std::cout << "\tdefine spin components... " << std::flush;
-	// double den kack
-	fourD fcinxD(spinorSize,
-			std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-				std::vector<std::vector<std::complex<double>>>(spinorSize,
-					std::vector<std::complex<double>>(spinorSize))));
+	//auto begin1 = std::chrono::high_resolution_clock::now();
+	//std::cout << "\tdefine spin components... " << std::flush;
+	//// double den kack
+	//fourD fcinxD(spinorSize,
+	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
+	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
+	//				std::vector<std::complex<double>>(spinorSize))));
 
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			for (int k=0; k<spinorSize; k++) {
-				for (int l=0; l<spinorSize; l++) {
-					fcinxD[i][j][k][l] = (0, 0);
-				}
-			}
-		}
-	}
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			for (int k=0; k<spinorSize/2; k++) {
-				for (int l=0; l<spinorSize/2; l++) {
-					fcinxD[i][j][k][l] = fcinx[i][j][k][l];
-					fcinxD[i][j][k+spinorSize/2][l+spinorSize/2] = fcinx[i][j][k][l];
-					fcinxD[i+spinorSize/2][j+spinorSize/2][k][l] = fcinx[i][j][k][l];
-					fcinxD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fcinx[i][j][k][l];
-				}
-			}
-		}
-	}
-	auto end1 = std::chrono::high_resolution_clock::now();
-	auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
-	printf(" done after %.3fs\n", elapsed1.count()*1e-3);
+	//for (int i=0; i<spinorSize; i++) {
+	//	for (int j=0; j<spinorSize; j++) {
+	//		for (int k=0; k<spinorSize; k++) {
+	//			for (int l=0; l<spinorSize; l++) {
+	//				fcinxD[i][j][k][l] = (0, 0);
+	//			}
+	//		}
+	//	}
+	//}
+	//for (int i=0; i<spinorSize/2; i++) {
+	//	for (int j=0; j<spinorSize/2; j++) {
+	//		for (int k=0; k<spinorSize/2; k++) {
+	//			for (int l=0; l<spinorSize/2; l++) {
+	//				fcinxD[i][j][k][l] = fcinx[i][j][k][l];
+	//				fcinxD[i][j][k+spinorSize/2][l+spinorSize/2] = fcinx[i][j][k][l];
+	//				fcinxD[i+spinorSize/2][j+spinorSize/2][k][l] = fcinx[i][j][k][l];
+	//				fcinxD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fcinx[i][j][k][l];
+	//			}
+	//		}
+	//	}
+	//}
+	//auto end1 = std::chrono::high_resolution_clock::now();
+	//auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
+	//printf(" done after %.3fs\n", elapsed1.count()*1e-3);
 
 	
 
@@ -689,36 +689,33 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// calc G first
 	Eigen::MatrixXcd C = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	Eigen::MatrixXcd K = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	Eigen::MatrixXcd Cnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	Eigen::MatrixXcd Knx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//Eigen::MatrixXcd F = hmatBig;
-	//F << hmat, Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
-	//	Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hmat;
+	//Eigen::MatrixXcd Cnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+	//Eigen::MatrixXcd Knx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	auto begin2 = std::chrono::high_resolution_clock::now();
 	std::cout << "\tcalculating derivative of G..." << std::flush;
 	std::cout << "\n";
-	for (int k=0; k<spinorSize; k++) {
-		for (int l=0; l<spinorSize; l++) {
-			for (int m=0; m<spinorSize; m++) {
-				for (int n=0; n<spinorSize; n++) {
-					Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
-					Knx(k, l) -= denMat(n, m) * fcinxD[k][n][m][l];
-				}
-			}
-		}
-	}
-	std::cout << "\n";
+	//for (int k=0; k<spinorSize; k++) {
+	//	for (int l=0; l<spinorSize; l++) {
+	//		for (int m=0; m<spinorSize; m++) {
+	//			for (int n=0; n<spinorSize; n++) {
+	//				Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
+	//				Knx(k, l) -= denMat(n, m) * fcinxD[k][n][m][l];
+	//			}
+	//		}
+	//	}
+	//}
+	//std::cout << "\n";
 
 	// read Coulomb derivative
-	const auto Jnxread = readCoulomb("jf" + std::to_string(nuc) + cartDict[cart]);
-	auto diff = Jnxread - Cnx.block(0, 0, spinorSize/2, spinorSize/2);
-	double diffmax = -1.0;
-	for (int i=0; i<spinorSize/2; i++) {
-		for (int j=0; j<spinorSize/2; j++) {
-			diffmax = std::max(diffmax, abs(diff(i, j)));
-		}
-	}
-	std::cout << " --------------->  diffmax coul = " << diffmax << "\n";
+	const auto Cnx = readCoulomb("jf" + std::to_string(nuc) + cartDict[cart]);
+	//auto diff = Jnxread - Cnx.block(0, 0, spinorSize/2, spinorSize/2);
+	//double diffmax = -1.0;
+	//for (int i=0; i<spinorSize/2; i++) {
+	//	for (int j=0; j<spinorSize/2; j++) {
+	//		diffmax = std::max(diffmax, abs(diff(i, j)));
+	//	}
+	//}
+	//std::cout << " --------------->  diffmax coul = " << diffmax << "\n";
 
 	//std::cout << "\ndJ/dIa real:\n" << std::fixed << std::setprecision(5) << Cnx.real() << "\n";
 	//std::cout << "\nJnx read real:\n" << std::fixed << std::setprecision(5) << Jnxread.real() << "\n";
@@ -734,30 +731,47 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	const auto Knx7 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 7);
 	const auto Knx8 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 8);
 
-	Eigen::MatrixXcd Knxread(spinorSize, spinorSize);
-	Knxread.block(0, 0, spinorSize/2, spinorSize/2).real() = Knx1;				// Re aa
-	Knxread.block(0, 0, spinorSize/2, spinorSize/2).imag() = Knx5;				// Im aa
-	Knxread.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2).real() = Knx4;	// Re bb
-	Knxread.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2).imag() = Knx8;	// Im bb
-	Knxread.block(0, spinorSize/2, spinorSize/2, spinorSize/2).real() = 0.5*(Knx2 + Knx6);	// Re ab
-	Knxread.block(0, spinorSize/2, spinorSize/2, spinorSize/2).imag() = 0.5*(Knx3 + Knx7);	// Im ab
-	Knxread.block(spinorSize/2, 0, spinorSize/2, spinorSize/2).real() = 0.5*(Knx2 - Knx6);	// Re ba
-	Knxread.block(spinorSize/2, 0, spinorSize/2, spinorSize/2).imag() = 0.5*(Knx3 - Knx7);	// Im ba
+	Eigen::MatrixXcd Knx(spinorSize, spinorSize);
+	Knx.block(0, 0, spinorSize/2, spinorSize/2).real() = Knx1;				// Re aa
+	Knx.block(0, 0, spinorSize/2, spinorSize/2).imag() = Knx5;				// Im aa
+	Knx.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2).real() = Knx4;	// Re bb
+	Knx.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2).imag() = Knx8;	// Im bb
+	Knx.block(0, spinorSize/2, spinorSize/2, spinorSize/2).real() = 0.5*(Knx2 - Knx6);	// Re ab
+	Knx.block(0, spinorSize/2, spinorSize/2, spinorSize/2).imag() = -0.5*(Knx3 - Knx7);	// Im ab
+	Knx.block(spinorSize/2, 0, spinorSize/2, spinorSize/2).real() = 0.5*(Knx2 + Knx6);	// Re ba
+	Knx.block(spinorSize/2, 0, spinorSize/2, spinorSize/2).imag() = 0.5*(Knx3 + Knx7);	// Im ba
 												
 	//std::cout << "\ndK/dIa real:\n" << std::fixed << std::setprecision(5) << Knx.real() << "\n";
 	//std::cout << "\ndK/dIa real read:\n" << std::fixed << std::setprecision(5) << Knxread.real() << "\n";
 	//std::cout << "\ndK/dIa imag:\n" << std::fixed << std::setprecision(5) << Knx.imag() << "\n";
 	//std::cout << "\ndK/dIa imag read:\n" << std::fixed << std::setprecision(5) << Knxread.imag() << "\n";
-	std::cout << std::defaultfloat;
 	
-	const auto diffex = Knx - Knxread;
-	diffmax = -1.0;
-	for (int i=0; i<spinorSize; i++) {
-		for (int j=0; j<spinorSize; j++) {
-			diffmax = std::max(diffmax, abs(diffex(i, j)));
-		}
-	}
-	std::cout << " --------------->  diffmax exch = " << diffmax << "\n";
+	//const auto diffexaa = (Knx - Knxread).block(0, 0, spinorSize/2, spinorSize/2);
+	//const auto diffexbb = (Knx - Knxread).block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2);
+	//const auto diffexab = (Knx - Knxread).block(0, spinorSize/2, spinorSize/2, spinorSize/2);
+	//const auto diffexba = (Knx - Knxread).block(spinorSize/2, 0, spinorSize/2, spinorSize/2);
+	//double diffmaxaa = -1.0;
+	//double diffmaxbb = -1.0;
+	//double diffmaxab = -1.0;
+	//double diffmaxba = -1.0;
+	//for (int i=0; i<spinorSize/2; i++) {
+	//	for (int j=0; j<spinorSize/2; j++) {
+	//		diffmaxaa = std::max(diffmaxaa, abs(diffexaa(i, j)));
+	//		diffmaxbb = std::max(diffmaxbb, abs(diffexbb(i, j)));
+	//		diffmaxab = std::max(diffmaxab, abs(diffexab(i, j)));
+	//		diffmaxba = std::max(diffmaxba, abs(diffexba(i, j)));
+	//	}
+	//}
+	//std::cout << " --------------->  diffmax exch aa = " << diffmaxaa << "\n";
+	//std::cout << " --------------->  diffmax exch bb = " << diffmaxbb << "\n";
+	//std::cout << " --------------->  diffmax exch ab = " << diffmaxab << "\n";
+	//std::cout << " --------------->  diffmax exch ba = " << diffmaxba << "\n";
+
+	//std::cout << std::fixed << std::setprecision(8) << "Knx real:\n" << Knx.block(0, spinorSize/2, spinorSize/2, spinorSize/2).real() << "\n\n";
+	//std::cout << std::fixed << std::setprecision(8) << "Knx read real:\n" << Knxread.block(0, spinorSize/2, spinorSize/2, spinorSize/2).real() << "\n\n";
+	//std::cout << std::fixed << std::setprecision(8) << "Knx imag:\n" << Knx.block(0, spinorSize/2, spinorSize/2, spinorSize/2).imag() << "\n\n";
+	//std::cout << std::fixed << std::setprecision(8) << "Knx read imag:\n" << Knxread.block(0, spinorSize/2, spinorSize/2, spinorSize/2).imag() << "\n\n";
+	std::cout << std::defaultfloat;
 
 
 	auto end2 = std::chrono::high_resolution_clock::now();
@@ -772,7 +786,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//fockSAO += C.transpose();
 	//fockSAO += K.transpose();
 	std::cout << "\tupdating fock derivative..." << std::flush;
-	fnx += Cnx.transpose();
+	fnx.block(0, 0, spinorSize/2, spinorSize/2) += Cnx.transpose();
+	fnx.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2) += Cnx.transpose();
 	fnx += Knx.transpose();
 	std::cout << " done.\n" << std::flush;
 

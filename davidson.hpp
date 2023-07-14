@@ -29,7 +29,7 @@ std::vector<Eigen::Vector<T, Eigen::Dynamic>> davidsonSolve(
     // init dimension of matrix
     const int n = A.rows();
     // init maximum number of iterations
-    constexpr int iterlimit = 20;
+    constexpr int iterlimit = 300;
     // number of roots
     const int nroots = b.size();
     int nconv; // number of converged roots
