@@ -19,7 +19,7 @@ std::vector<Eigen::VectorXcd> cphf(Eigen::MatrixXcd A, Eigen::MatrixXcd B, std::
 		schmon << F[i], F[i].conjugate();
 		b.push_back(schmon);
 	}
-	auto uall = davidsonSolve(kek, b, 1e-5);
+	auto uall = davidsonSolve(kek, b, 1e-9);
 
 	return uall;
 }

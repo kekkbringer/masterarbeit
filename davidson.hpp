@@ -12,6 +12,9 @@ using std::chrono::duration;
 using std::chrono::milliseconds;
 
 template<class T>
+size_t temsize(const T&) noexcept {return sizeof(T);}
+
+template<class T>
 void mgs(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &V) {
     const Eigen::Vector<T, Eigen::Dynamic> v = V.col(V.cols()-1);
     Eigen::Vector<T, Eigen::Dynamic> U = v;
@@ -29,7 +32,7 @@ std::vector<Eigen::Vector<T, Eigen::Dynamic>> davidsonSolve(
     // init dimension of matrix
     const int n = A.rows();
     // init maximum number of iterations
-    constexpr int iterlimit = 300;
+    constexpr int iterlimit = 50;
     // number of roots
     const int nroots = b.size();
     int nconv; // number of converged roots
@@ -50,6 +53,14 @@ std::vector<Eigen::Vector<T, Eigen::Dynamic>> davidsonSolve(
     std::cout << "\tsize of vector space:  " << n << "\n";
     std::cout << "\tsize of rhs space:     " << b[0].rows() << "\n";
     std::cout << "\tconvergence criterion: " << tol << "\n\n" << std::flush;
+
+    // estimate memory requirements
+    std::cout << " :: Davidson memory requirements\n";
+    const size_t s = temsize(A(0, 0)); // size of one number in byte
+    std::cout << "\tsize of Matrix:      " << s*A.rows()*A.cols()/1'000'000 << " MB\n";
+    std::cout << "\tsize for subspace:   " << s*iterlimit*iterlimit/1'000'000 << " MB\n";
+    std::cout << "\tsize for projection: " << s*iterlimit*A.rows()/1'000'000 << " MB";
+    std::cout << "\n\n" << std::flush;
 
     auto tstart = high_resolution_clock::now();
 
@@ -86,7 +97,6 @@ std::vector<Eigen::Vector<T, Eigen::Dynamic>> davidsonSolve(
 
     // davidson iterations
     int iter = 1;
-    int nexpand = 1;
     double maxres;
     for (int j=1; j<=iterlimit; j++) {
         std::cout << " ============= Davidson iteration " << iter
@@ -121,7 +131,6 @@ std::vector<Eigen::Vector<T, Eigen::Dynamic>> davidsonSolve(
 
 	    maxres = std::max(maxres, r.norm());
             if (r.norm() <= tol) {nconv++; res[root] = x; converged[root]=true;}
-            
 
 	    for (int i=0; i<n; i++) { delta(i) = r(i) * Darr[i]; }
 

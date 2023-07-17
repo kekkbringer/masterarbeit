@@ -14,7 +14,7 @@
 
 Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, const int nvirt,
 		Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
-	std::cout << "\n\n========================================\neritrans... oh boi...\n";
+	std::cout << " :: starting spinor transformation of fourcenter integrals\n" << std::flush;
 
 	// reading coord file to know which atoms occur in which order
 	//std::cout << "fourcenter reading coord...\n";
@@ -29,22 +29,15 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		std::string word;
 		std::istringstream iss(line);
 		while(iss >> word) {} // now word contains the elemental symbol
-		//std::cout << "elemental symbol: " << word << "\n";
 		atoms.push_back(word);
 	}
 	coord.close();
 
 	const int atomNum = atoms.size();
-	//std::cout << "\nnumber of atoms: " << atomNum << "\n";
-
-	//std::cout << "\n\nHENLÖ in read_fourcenter!\n\n" << std::flush;
-
 
 	// reading basis set info from 'basis' file
 	std::ifstream basis("basis");
 	if (basis.fail()) std::cout << "\nWARNING: could not read basis file!\n";
-	std::cout << "      minor warning: I'm reading from comments in basis file, e.g. '# li  (7s3p) / [3s2p]    {511/21}'\n";
-	std::cout << "      minor warning: only s-, p-, d- and f-type orbitals are supported yet!\n";
 
 	std::vector<int> s(atomNum);
 	std::vector<int> p(atomNum);
@@ -59,15 +52,12 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	//std::cout << " looking for comments\n";
 	while (getline(basis, line)) {
 		if (line[0] == '#') {
-			//std::cout << line << "\n";
 			std::istringstream bss(line);
 			std::string word, a;
 			bss >> word; // '#'
 			bss >> a; // 'li'
-			//std::cout << "reading basis info for: " << a << "\n";
 			while (bss >> word) {
 				if (word[0] == '[') {
-					//std::cout << " yesh: " << word << "\n";
 					// check for atom type
 					for (int atom=0; atom<atomNum; atom++) {
 						if (atoms[atom] == a) { // hit
@@ -119,8 +109,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		}
 	}
 
-	//std::cout << "\n\nBREAK 1\n\n" << std::flush;
-
 	const int fciSize = sSize + 3*pSize + 6*dSize + 10*fSize + 15*gSize;	// nCAO
 	const int returnSize = sSize + 3*pSize + 5*dSize + 7*fSize + 9*gSize;	// nSAO
 
@@ -130,7 +118,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	std::vector<std::vector<int>> returnMap(sSize+pSize+dSize+fSize+gSize+1);
 	returnMap[0] = {-1};
 
-	//std::cout << "init orbitalIndexMap...\n";
 	// first: all s orbitals
 	int orbIndex = 1;
 	int aoIndex = 0;
@@ -201,7 +188,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	 * TODO: comment
 	 */
 
-	//std::cout << "init return Map...\n";
 	// first: all s orbitals
 	orbIndex = 1;
 	aoIndex = 0;
@@ -262,27 +248,14 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		}
 	}
 
-
-	// generate swap matrix from orbitalIndexMap for later reordering purposes
-	//std::cout << "orbitalindexmap:\n";
-	//for (auto x: orbitalIndexMap) {
-	//	for (auto y:x) {
-	//		std::cout << y << "   ";
-	//	}
-	//	std::cout << "\n";
-	//}
-	
 	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize+15*gSize, sSize+3*pSize+6*dSize+10*fSize+15*gSize);
 	int orbcounter = 0;
 	for (int i=1; i<sSize+pSize+dSize+fSize+gSize+1; i++) {
 		for (auto x: orbitalIndexMap[i]) {
-			//std::cout << x << "   ";
 			swapMat(orbcounter, x) = 1;
 			orbcounter++;
 		}
-		std::cout << "\n";
 	}
-	//std::cout << "swapmat:\n" << swapMat << "\n\n";
 
 	// save swap matrix to file berryswap.r
 	std::ofstream swapfile;
@@ -310,7 +283,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	// init Four Center Integrals
 	const int nCAO = fciSize;
 	const int nSAO = returnSize;
-	std::cout << "eritrafo memory requirement for trans1: " << sizeof(std::complex<double>)*2.0*nCAO*nCAO*nCAO/1000.0/1000.0 << " MB\n";
+	std::cout << "eritrafo memory requirement for first trafo step: " << sizeof(std::complex<double>)*2.0*nCAO*nCAO*nCAO/1000.0/1000.0 << " MB\n";
 	int batchnum;
 
 	for (batchnum=nocc; batchnum<nocc+nvirt; batchnum++) {
@@ -320,9 +293,8 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		std::ifstream im("fourcenter.i");
 		std::string lineIm;
 
-		std::cout << "   " << batchnum-nocc << "/" << nvirt << std::endl;
+		std::cout << "   " << batchnum-nocc+1 << "/" << nvirt << std::endl;
 
-		//std::cout << "starting batch " << batchnum << std::endl;
 		std::vector<Eigen::MatrixXcd> trans1(2*nCAO, Eigen::MatrixXcd::Zero(nCAO, nCAO));
 
 		int i, a, b; // [ij||ab]
@@ -339,11 +311,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			getline(im, lineIm);
 			b = stoi(line);
 
-			//degeneracy *= orbitalIndexMap.at(i).size()
-			//	    * orbitalIndexMap.at(j).size()
-			//	    * orbitalIndexMap.at(a).size()
-			//	    * orbitalIndexMap.at(b).size();
-			
+			// mega unclean aber scheiß drauf
 			const unsigned int id1 = i + 1'0000*j + 1'0000'0000*a + 1'0000'0000'0000*b;
 			const unsigned int id2 = a + 1'0000*b + 1'0000'0000*i + 1'0000'0000'0000*j;
 			const unsigned int id3 = j + 1'0000*i + 1'0000'0000*b + 1'0000'0000'0000*a;
@@ -358,11 +326,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 							getline(im, lineIm);
 							const double valRe = stod(line);
 							const double valIm = stod(lineIm);
-
-							//const unsigned int id1 = alpha + 1'0000*beta + 1'0000'0000*gamma + 1'0000'0000'0000*delta;
-							//const unsigned int id2 = gamma + 1'0000*delta + 1'0000'0000*alpha + 1'0000'0000'0000*beta;
-							//const unsigned int id3 = beta + 1'0000*alpha + 1'0000'0000*delta + 1'0000'0000'0000*gamma;
-							//const unsigned int id4 = delta + 1'0000*gamma + 1'0000'0000*beta + 1'0000'0000'0000*alpha;
 
 							// spin up + spin up
 							trans1[beta](gamma, delta)
@@ -397,19 +360,15 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		re.close();
 		im.close();
 
-		//std::cout << "file reading and first trafo done" << std::endl;
-
 
 		// second transformation step
 		// (a nu | kap lam)  ->  (a p | kap lam)
-		//std::cout << "second trafo step" << std::endl;
 		std::vector<Eigen::MatrixXcd> trans2(2*nCAO, Eigen::MatrixXcd::Zero(nCAO, nCAO));
 		for (int p=0; p<2*nSAO; p++) {
 			for (int kap=0; kap<nCAO; kap++) {
 				for (int lam=0; lam<nCAO; lam++) {
 					for (int nu=0; nu<2*nCAO; nu++) {
 						trans2[p](kap, lam) += std::conj(spinorCAO(nu, p)) * trans1[nu](kap, lam);
-						//std::cout << "(a " << p << " | " << kap << " " << lam << ") = " << trans2[p](kap, lam) << "\n";
 					}
 				}
 			}
@@ -419,7 +378,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		
 		// third transformation step
 		// (a p | kap lam)  ->  (a p | q lam)
-		//std::cout << "third trafo step" << std::endl;
 		std::vector<Eigen::MatrixXcd> trans3(2*nCAO, Eigen::MatrixXcd::Zero(2*nCAO, 2*nCAO));
 		for (int p=0; p<2*nSAO; p++) {
 			for (int q=0; q<2*nSAO; q++) {
@@ -439,7 +397,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 
 		// fourth transformation
 		// (a p | q lam)  ->  (a p | q r)
-		//std::cout << "fourth trafo step" << std::endl;
 		std::vector<Eigen::MatrixXcd> trans4(2*nCAO, Eigen::MatrixXcd::Zero(2*nCAO, 2*nCAO));
 		for (int p=0; p<2*nSAO; p++) {
 			for (int q=0; q<2*nSAO; q++) {
@@ -455,13 +412,10 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 
 		
 		// write to A and B
-		//std::cout << "AB step" << std::endl;
-		//std::cout << "nocc+nvirt=" << nocc+nvirt << std::endl;
 		for (int i=0; i<nocc; i++) {
 			for (int j=0; j<nocc; j++) {
 				for (int b=nocc; b<nocc+nvirt; b++) {
 					const int a = batchnum;
-					//std::cout << "i=" << i << "   j=" << j << "   b=" << b << std::endl;
 					A ( i*nvirt+a-nocc, j*nvirt+b-nocc ) = trans4[i](j, b) - trans4[b](j, i);
 					B ( i*nvirt+a-nocc, j*nvirt+b-nocc ) = trans4[i](b, j) - trans4[j](b, i);
 				}
@@ -474,7 +428,6 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 				}
 			}
 		}
-		//std::cout << "batch " << batchnum << " done!" << std::endl;
 		// ============================================== end of one batch =============================================
 	}
 	std::cout << "eritrans ended successfully" << std::endl;

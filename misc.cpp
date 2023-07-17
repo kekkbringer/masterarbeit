@@ -675,6 +675,40 @@ void deleteTmpFiles(const int natom) {
 		std::remove(("snxketip" + std::to_string(I) + "_2.r").c_str());
 		std::remove(("snxketip" + std::to_string(I) + "_2.i").c_str());
 
+		std::remove(("exch" + std::to_string(I) + "x1").c_str());
+		std::remove(("exch" + std::to_string(I) + "x2").c_str());
+		std::remove(("exch" + std::to_string(I) + "x3").c_str());
+		std::remove(("exch" + std::to_string(I) + "x4").c_str());
+		std::remove(("exch" + std::to_string(I) + "x5").c_str());
+		std::remove(("exch" + std::to_string(I) + "x6").c_str());
+		std::remove(("exch" + std::to_string(I) + "x7").c_str());
+		std::remove(("exch" + std::to_string(I) + "x8").c_str());
+
+		std::remove(("exch" + std::to_string(I) + "y1").c_str());
+		std::remove(("exch" + std::to_string(I) + "y2").c_str());
+		std::remove(("exch" + std::to_string(I) + "y3").c_str());
+		std::remove(("exch" + std::to_string(I) + "y4").c_str());
+		std::remove(("exch" + std::to_string(I) + "y5").c_str());
+		std::remove(("exch" + std::to_string(I) + "y6").c_str());
+		std::remove(("exch" + std::to_string(I) + "y7").c_str());
+		std::remove(("exch" + std::to_string(I) + "y8").c_str());
+
+		std::remove(("exch" + std::to_string(I) + "z1").c_str());
+		std::remove(("exch" + std::to_string(I) + "z2").c_str());
+		std::remove(("exch" + std::to_string(I) + "z3").c_str());
+		std::remove(("exch" + std::to_string(I) + "z4").c_str());
+		std::remove(("exch" + std::to_string(I) + "z5").c_str());
+		std::remove(("exch" + std::to_string(I) + "z6").c_str());
+		std::remove(("exch" + std::to_string(I) + "z7").c_str());
+		std::remove(("exch" + std::to_string(I) + "z8").c_str());
+
+		std::remove(("jf" + std::to_string(I) + "x.r").c_str());
+		std::remove(("jf" + std::to_string(I) + "x.i").c_str());
+		std::remove(("jf" + std::to_string(I) + "y.r").c_str());
+		std::remove(("jf" + std::to_string(I) + "y.i").c_str());
+		std::remove(("jf" + std::to_string(I) + "z.r").c_str());
+		std::remove(("jf" + std::to_string(I) + "z.i").c_str());
+
 		for (int J=0; J<natom; J++) {
 			std::remove(("bk" + std::to_string(I) + "x" + std::to_string(J) + "x.r").c_str());
 			std::remove(("bk" + std::to_string(I) + "y" + std::to_string(J) + "y.r").c_str());
@@ -705,8 +739,8 @@ void deleteTmpFiles(const int natom) {
 	std::remove("edipole.i");
 	std::remove("hmatcao.r");
 	std::remove("hmatcao.i");
-	//std::remove("smatcao.r");
-	//std::remove("smatcao.i");
+	std::remove("smatcao.r");
+	std::remove("smatcao.i");
 	std::remove("wcao.r");
 	std::remove("wcao.i");
 }
@@ -766,7 +800,10 @@ Eigen::MatrixXd readExchange(std::string filename, int c) {
 		}
 	}
 
-	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
 	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
 }
 
+void saveBerry(const Eigen::MatrixXcd& berry) {
+	std::fstream("berrytensor.out", std::ios::trunc | std::ios::out)
+		<< std::fixed << std::setprecision(15) << berry.imag() << "\n";
+}

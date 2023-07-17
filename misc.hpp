@@ -18,3 +18,4 @@ Eigen::MatrixXcd readNumSpinor(std::string filename);
 void deleteTmpFiles(const int natom);
 Eigen::MatrixXcd readCoulomb(std::string filename);
 Eigen::MatrixXd readExchange(std::string filename, int c);
+void saveBerry(const Eigen::MatrixXcd& berry);

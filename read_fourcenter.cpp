@@ -818,16 +818,6 @@ void makeCAOtrans() {
 		}
 	}
 
-
-	// generate swap matrix from orbitalIndexMap for later reordering purposes
-	//std::cout << "orbitalindexmap:\n";
-	//for (auto x: orbitalIndexMap) {
-	//	for (auto y:x) {
-	//		std::cout << y << "   ";
-	//	}
-	//	std::cout << "\n";
-	//}
-	
 	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(sSize+3*pSize+6*dSize+10*fSize+15*gSize, sSize+3*pSize+6*dSize+10*fSize+15*gSize);
 	int orbcounter = 0;
 	for (int i=1; i<sSize+pSize+dSize+fSize+gSize+1; i++) {
@@ -836,7 +826,6 @@ void makeCAOtrans() {
 			swapMat(orbcounter, x) = 1;
 			orbcounter++;
 		}
-		std::cout << "\n";
 	}
 	//std::cout << "swapmat:\n" << swapMat << "\n\n";
 
@@ -974,14 +963,5 @@ void makeCAOtrans() {
 	}
 	transfile.close();
 
-	// print trans matrix
-	//std::cout << "trans matrix:\n" << std::setprecision(1);
-	//for (auto x: trans) {
-	//	for (auto y: x) {
-	//		std::cout << y << "  ";
-	//	}
-	//	std::cout << "\n";
-	//}
 	std::cout << std::defaultfloat;
-	//std::cout << "\n" << std::flush;
 }

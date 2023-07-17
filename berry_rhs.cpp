@@ -359,10 +359,12 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	std::vector<int> p(atomNum);
 	std::vector<int> d(atomNum);
 	std::vector<int> f(atomNum);
+	std::vector<int> g(atomNum);
 	int sSize = 0;
 	int pSize = 0;
 	int dSize = 0;
 	int fSize = 0;
+	int gSize = 0;
 	//std::cout << " looking for comments\n";
 	while (getline(basis, line)) {
 		if (line[0] == '#') {
@@ -405,12 +407,20 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 							dSize += d[atom];
 							i++;
 							f.push_back(0);
-							for (; i<word.length()-1; i++) { // d
+							for (; i<word.length()-1; i++) { // f
 								if (word[i] == 'f') break;
 								f[atom] *= 10;
 								f[atom] += word[i] - '0';
 							}
 							fSize += f[atom];
+							i++;
+							g.push_back(0);
+							for (; i<word.length()-1; i++) { // g
+								if (word[i] == 'f') break;
+								g[atom] *= 10;
+								g[atom] += word[i] - '0';
+							}
+							gSize += g[atom];
 						}
 					}
 				}
@@ -420,10 +430,9 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	std::vector<int> basisFunctionLength(atomNum);
 	int matrixSize = 0;
 	for (int i=0; i<atomNum; i++) {
-		basisFunctionLength[i] = s[i] + 3*p[i] + 5*d[i] + 7*f[i];
-		matrixSize += s[i] + 3*p[i] + 5*d[i] + 7*f[i];
+		basisFunctionLength[i] = s[i] + 3*p[i] + 5*d[i] + 7*f[i] + 9*g[i];
+		matrixSize += s[i] + 3*p[i] + 5*d[i] + 7*f[i] + 9*g[i];
 	}
-	//std::cout << "matrix size: " << matrixSize << "\n\n";
 
 
 
@@ -454,7 +463,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	 */
 
 	// looking for occupied spinors in control file
-	std::cout << "\treading control file for some additional infos...\n" << std::flush;
+	std::cout << "\treading control file for some additional infos..." << std::flush;
 	int nocc = 0;
 	double Bx = 0.0;
 	double By = 0.0;
@@ -508,41 +517,25 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 
 	// end of control file section
 	control.close();
+	std::cout << "   done\n" << std::flush;
 
-	//std::cout << "\n" << std::flush;
-
-
-
-
-	// HIER WAR OVERLAP SPLIT
-	// construct S_ab^(N_x)
-	// N is in nuc
-	// x is in cart
-	//const auto bra = readHerm("b" + std::to_string(nuc) + cartDict[cart]);
-	//const auto ket = readHerm("k" + std::to_string(nuc) + cartDict[cart]);
+	
+	std::cout << "\treading 1e matrices..." << std::flush;
 	const auto bra = readMatrixTransform("b" + std::to_string(nuc) + cartDict[cart]);
 	const auto ket = readMatrixTransform("k" + std::to_string(nuc) + cartDict[cart]);
 	const auto snx = (bra + ket).conjugate();
-	//std::cout << "snx dim: " << snx.rows() << " x " << snx.cols() << "\n";
-	//std::cout << "\nsnx:\n" << snx << "\n\n";
-	//*/
-	
-	// UND HIER HAMILTON
-	// construct H_ab^(N_x)
-	// N is in nuc
-	// x is in cart
 	const auto hnx = readHerm("h" + std::to_string(nuc) + cartDict[cart]);
-	//std::cout << "hnx dim: " << hnx.rows() << " x " << hnx.cols() << "\n";
-	//std::cout << "\nhnx:\n" << hnx << "\n\n";
-	//*/
+	std::cout << "   done\n" << std::flush;
+
 
 	/*****************************************************************************
 	 *                             calculate fock matrix                         *
 	 ****************************************************************************/
-	std::cout << "\tcalculating derivative of fock matrix...\n";
+	std::cout << "\tcalculating density matrix..." << std::flush;
 	std::vector<double> epsilon;
 	auto spinor = readSpinor(epsilon);
 	int spinorSize = spinor.rows();
+	matrixSize = spinorSize/2;
 	Eigen::MatrixXcd denMat = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	for (int k=0; k<spinorSize; k++) {
 		for (int l=0; l<spinorSize; l++) {
@@ -551,12 +544,13 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 			}
 		}
 	}
+	std::cout << "   done\n" << std::flush;
 
 
 	// ==================================== SPIN ZEEMAN ===================================
 
 	// spin-Zeeman contribution (SAO)
-	std::cout << "\tcalculating spin Zeeman contribution\n";
+	std::cout << "\tcalculating spin Zeeman contribution" << std::flush;
 	Eigen::MatrixXcd zeemanx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	Eigen::MatrixXcd zeemany = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	Eigen::MatrixXcd zeemanz = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
@@ -571,9 +565,10 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	auto fockSAO = zeemanx;// + zeemany + zeemanz;
 	fockSAO += zeemany;
 	fockSAO += zeemanz;
+	std::cout << "   done\n" << std::flush;
 
-	std::cout << "\tcalculating derivative of spin Zeeman contribution\n";
-	const double spinFactor = 1.0;
+	std::cout << "\tcalculating derivative of spin Zeeman contribution" << std::flush;
+	constexpr double spinFactor = 1.0;
 
 	// transform to spinor basis
 	zeemanx = spinFactor * spinor.adjoint() * zeemanx * spinor;
@@ -616,6 +611,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	zetotnx = zxnx;
 	zetotnx += zynx;
 	zetotnx += zznx;
+	std::cout << "   done\n" << std::flush;
 
 
 	// fourcenter derivatives in SAO basis
