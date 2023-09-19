@@ -13,7 +13,7 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d -not -path '*/.*' -not -path './obj' -not -path './bin')
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -O3 -std=c++20 -static -flto=auto
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -O3 -std=c++17 -static -flto=auto
 LDFLAGS ?= $(INC_FLAGS) -static -O3 -flto=auto
 
 # executable

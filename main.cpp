@@ -40,6 +40,7 @@ using namespace std::complex_literals;
  *
  */
 int main(int argc, char* argv[]) {
+	std::cout << "berryNODELETE\n";
 	setRestart(0);
 
 	/**********************************************************************
@@ -401,7 +402,7 @@ int main(int argc, char* argv[]) {
 	printf("   Total:                          %.3f s\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
 
 	// delete temporary scratch files
-	deleteTmpFiles(atomNum);
+	//deleteTmpFiles(atomNum);
 	std::cout << std::endl;
 	// end of Berry section
 
