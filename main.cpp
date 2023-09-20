@@ -154,6 +154,7 @@ int main(int argc, char* argv[]) {
 	const auto begin2 = std::chrono::high_resolution_clock::now();
 	std::vector<Eigen::VectorXcd> ball;
 	splitExchange(atomNum, ncao);
+	splitJSxi(atomNum, ncao);
 	split1efiles(atomNum, ncao);
 	std::cout << "\n\n :: calculating CPHF rhs vectors\n\n" << std::flush;
 	for (int nuc=0; nuc<atomNum; nuc++) {

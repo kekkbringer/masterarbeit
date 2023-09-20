@@ -66,6 +66,34 @@ void splitExchange(int atomNum, int ncao) {
 	}
 }
 
+void splitJSxi(int atomNum, int ncao) {
+	const std::string cartDict[] = {"x", "y", "z"};
+
+	std::ifstream jsxi("crhsout");
+	if (jsxi.fail()) std::cout << "could not read crhsout!" << std::endl;
+	std::string line;
+
+	const int caoSize = ncao*(ncao+1)/2;
+
+	for (int iat=0; iat<atomNum; iat++) {
+		for (int icart=0; icart<3; icart++) {
+			getline(jsxi, line); // ********
+			getline(jsxi, line); // number
+			
+			std::ofstream fil("jsxi" + std::to_string(iat) + cartDict[icart]);
+			fil << ncao << "\n";
+			for (int i=0; i<2*caoSize; i++) {
+				getline(jsxi, line);
+				fil << line << "\n";
+			}
+
+			fil.close();
+		}
+	}
+
+	jsxi.close();
+}
+
 void split1efiles(int atomNum, int ncao) {
 	/*****************************************************************************
 	 *                             overlap and stuff                             *
@@ -546,7 +574,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	}
 	std::cout << "   done\n" << std::flush;
 
-
 	// ==================================== SPIN ZEEMAN ===================================
 
 	// spin-Zeeman contribution (SAO)
@@ -685,39 +712,14 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// calc G first
 	Eigen::MatrixXcd C = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	Eigen::MatrixXcd K = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//Eigen::MatrixXcd Cnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	//Eigen::MatrixXcd Knx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	auto begin2 = std::chrono::high_resolution_clock::now();
 	std::cout << "\tcalculating derivative of G..." << std::flush;
 	std::cout << "\n";
-	//for (int k=0; k<spinorSize; k++) {
-	//	for (int l=0; l<spinorSize; l++) {
-	//		for (int m=0; m<spinorSize; m++) {
-	//			for (int n=0; n<spinorSize; n++) {
-	//				Cnx(k, l) += denMat(n, m) * fcinxD[k][l][m][n];
-	//				Knx(k, l) -= denMat(n, m) * fcinxD[k][n][m][l];
-	//			}
-	//		}
-	//	}
-	//}
-	//std::cout << "\n";
 
 	// read Coulomb derivative
 	const auto Cnx = readCoulomb("jf" + std::to_string(nuc) + cartDict[cart]);
-	//auto diff = Jnxread - Cnx.block(0, 0, spinorSize/2, spinorSize/2);
-	//double diffmax = -1.0;
-	//for (int i=0; i<spinorSize/2; i++) {
-	//	for (int j=0; j<spinorSize/2; j++) {
-	//		diffmax = std::max(diffmax, abs(diff(i, j)));
-	//	}
-	//}
-	//std::cout << " --------------->  diffmax coul = " << diffmax << "\n";
 
-	//std::cout << "\ndJ/dIa real:\n" << std::fixed << std::setprecision(5) << Cnx.real() << "\n";
-	//std::cout << "\nJnx read real:\n" << std::fixed << std::setprecision(5) << Jnxread.real() << "\n";
-	//std::cout << "\ndJ/dIa imag:\n" << std::fixed << std::setprecision(5) << Cnx.imag() << "\n";
-	//std::cout << "\nJnx read imag:\n" << std::fixed << std::setprecision(5) << Jnxread.imag() << "\n";
-
+	// read Exchange derivative
 	const auto Knx1 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 1);
 	const auto Knx2 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 2);
 	const auto Knx3 = readExchange("exch" + std::to_string(nuc) + cartDict[cart], 3);
@@ -801,38 +803,59 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	fnx.transposeInPlace();
 
 
+	//// b0ai in ao basis test
+	//const auto eri = readFourcenter("");
+	//const auto stilde = denMat * snxBig * denMat;
+	//Eigen::MatrixXcd Jaa = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Jab = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Jba = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Jbb = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Kaa = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Kab = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Kba = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+	//Eigen::MatrixXcd Kbb = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
+
+	//const auto saa = stilde.block(0, 0, spinorSize/2, spinorSize/2);
+	//const auto sbb = stilde.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2);
+	//const auto sab = stilde.block(0, spinorSize/2, spinorSize/2, spinorSize/2);
+	//const auto sba = stilde.block(spinorSize/2, 0, spinorSize/2, spinorSize/2);
+	//for (int mu=0; mu<spinorSize/2; mu++) {
+	//	for (int nu=0; nu<spinorSize/2; nu++) {
+	//		for (int kap=0; kap<spinorSize/2; kap++) {
+	//			for (int lam=0; lam<spinorSize/2; lam++) {
+	//				Jaa(mu, nu) += eri[mu][nu][kap][lam] * saa(kap, lam);
+	//				Jab(mu, nu) += eri[mu][nu][kap][lam] * sab(kap, lam);
+	//				Jba(mu, nu) += eri[mu][nu][kap][lam] * sba(kap, lam);
+	//				Jbb(mu, nu) += eri[mu][nu][kap][lam] * sbb(kap, lam);
+	//				Kaa(mu, nu) += eri[mu][lam][kap][nu] * saa(kap, lam);
+	//				Kab(mu, nu) += eri[mu][lam][kap][nu] * sab(kap, lam);
+	//				Kba(mu, nu) += eri[mu][lam][kap][nu] * sba(kap, lam);
+	//				Kbb(mu, nu) += eri[mu][lam][kap][nu] * sbb(kap, lam);
+	//			}
+	//		}
+	//	}
+	//}
+
+
+	//Eigen::MatrixXcd Jt(spinorSize, spinorSize);
+	//Jt << Jaa, Jab, Jba, Jbb;
+	//Eigen::MatrixXcd Kt(spinorSize, spinorSize);
+	//Kt << Kaa, Kab, Kba, Kbb;
+
+	//const auto JtMO = spinor.adjoint() * Jt * spinor;
+	//const auto KtMO = spinor.adjoint() * Kt * spinor;
+	////std::cout << "Jt:\n" << Jt << "\n\n";
+	////std::cout << "Kt:\n" << Kt << "\n\n";
+	//////std::cout << "densfull real:\n" << denMat.real() << "\n";
+	//////std::cout << "densfull imag:\n" << denMat.imag() << "\n";
+	////std::cout << "Sxi bigg:\n" << snxBig << "\n\n";
+	////std::cout << "D*Sxi*D:\n" << stilde << "\n\n";
+
 	const size_t nvirt = spinorSize - nocc;
 	Eigen::VectorXcd b0ai = Eigen::VectorXcd::Zero(nocc*nvirt);
 
 	const auto fnx2cMO = spinor.adjoint() * fnx.conjugate() * spinor;
 	const auto snx2cMO = spinor.adjoint() * snxBig.conjugate() * spinor;
-
-
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nfnx AO:\n" << fnx << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nfnx MO:\n" << fnx2cMO << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nsnxAO:\n" << snx << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nsnx2cMO real:\n" << snx2cMO.real() << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nsnx2cMO imag:\n" << snx2cMO.imag() << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nc alter:\n" << Calternative << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nKspinor:\n" << Kspinor << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nK alter:\n" << Kalternative << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nhmat + c + k spinor:\n" << hmatBig.transpose() + Calternative + Kalternative << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nCoul AO:\n" << spinor.adjoint().inverse() * Calternative.transpose() * spinor.inverse() << "\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nCoul AO:\n" << C << "\n";
-	//std::cout << "\n\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nExch AO:\n" << spinor.adjoint().inverse() * Kalternative.transpose() * spinor.inverse() << "\n";
-	//std::cout << std::fixed << std::setprecision(8) << "\nExch AO:\n" << K << "\n";
-	//std::cout << std::defaultfloat;
 
 
 
@@ -854,15 +877,21 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 		}
 	}
 	std::cout << " 1e part done" << std::flush;
+	Eigen::VectorXcd b0aiTEST = Eigen::VectorXcd::Zero(nocc*nvirt);
+	Eigen::VectorXcd b0aiTEST2 = Eigen::VectorXcd::Zero(nocc*nvirt);
 	for (int i=0; i<nocc; i++) {
 		for (int k=0; k<nocc; k++) {
 			for (int l=0; l<nocc; l++) {
 				for (int a=nocc; a<spinorSize; a++) {
 					b0ai(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
+					b0aiTEST2(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
+					//b0aiTEST(i*nvirt + a - nocc) = JtMO(a, i) - KtMO(a, i);
 				}
 			}
 		}
 	}
+	std::cout << "b0ai neu:\n" << b0aiTEST << "\n\n";
+	std::cout << "b0ai:\n" << b0aiTEST2 << "\n\n";
 	auto end = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin);
 	printf("\ttotal done after %.3fs\n", elapsed.count()*1e-3);

@@ -303,29 +303,13 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			// determine indicies and degeneracy
 			std::istringstream iss(line);
 			std::string word;
+			int degeneracy = 1;
 			iss >> word; i = stoi(word);
 			iss >> word; j = stoi(word);
 			iss >> word; a = stoi(word);
 			getline(re, line);
 			getline(im, lineIm);
 			b = stoi(line);
-
-			// degeneracies of shells
-			const int idegen = orbitalIndexMap.at(i).size();
-			const int jdegen = orbitalIndexMap.at(j).size();
-			const int adegen = orbitalIndexMap.at(a).size();
-			const int bdegen = orbitalIndexMap.at(b).size();
-			const int totdegen = idegen * jdegen * adegen * bdegen;
-
-			double reshell[totdegen];
-			double imshell[totdegen];
-
-			for (int ii=0; ii<totdegen; ii++) {
-				getline(re, line);
-				reshell[ii] = stod(line);
-				getline(im, line);
-				imshell[ii] = stod(line);
-			}
 
 			// mega unclean aber scheiß drauf
 			const unsigned int id1 = i + 1'0000*j + 1'0000'0000*a + 1'0000'0000'0000*b;
@@ -334,83 +318,44 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			const unsigned int id4 = b + 1'0000*a + 1'0000'0000*j + 1'0000'0000'0000*i;
 
 			// reading in integerals
-			int ii = 0;
 			for (const auto& alpha: orbitalIndexMap.at(i)) {
 				for (const auto& beta: orbitalIndexMap.at(j)) {
 					for (const auto& gamma: orbitalIndexMap.at(a)) {
 						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
+							getline(re, line);
+							getline(im, lineIm);
+							const double valRe = stod(line);
+							const double valIm = stod(lineIm);
 
 							// spin up + spin up
 							trans1[beta](gamma, delta)
 								+= spinorCAO(alpha, batchnum)*std::complex<double>(valRe,  valIm);
+							if (id1!=id2)
+							trans1[delta](alpha, beta)
+								+= spinorCAO(gamma, batchnum)*std::complex<double>(valRe,  valIm);
+							if (id1!=id3 and id2!=id3)
+							trans1[alpha](delta, gamma)
+								+= spinorCAO( beta, batchnum)*std::complex<double>(valRe, -valIm);
+							if (id1!=id4 and id2!=id4 and id3!=id4)
+							trans1[gamma](beta, alpha)
+								+= spinorCAO(delta, batchnum)*std::complex<double>(valRe, -valIm);
 
 							// spin down + spin down
 							trans1[beta+nCAO](gamma, delta)
 								+= spinorCAO(alpha+nCAO, batchnum)*std::complex<double>(valRe,  valIm);
-						}
-					}
-				}
-			}
-
-			ii = 0;
-			if (id1!=id2)
-			for (const auto& alpha: orbitalIndexMap.at(i)) {
-				for (const auto& beta: orbitalIndexMap.at(j)) {
-					for (const auto& gamma: orbitalIndexMap.at(a)) {
-						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
-							trans1[delta](alpha, beta)
-								+= spinorCAO(gamma, batchnum)*std::complex<double>(valRe,  valIm);
+							if (id1!=id2)
 							trans1[delta+nCAO](alpha, beta)
 								+= spinorCAO(gamma+nCAO, batchnum)*std::complex<double>(valRe,  valIm);
-						}
-					}
-				}
-			}
-
-			ii = 0;
-			if (id1!=id3 and id2!=id3)
-			for (const auto& alpha: orbitalIndexMap.at(i)) {
-				for (const auto& beta: orbitalIndexMap.at(j)) {
-					for (const auto& gamma: orbitalIndexMap.at(a)) {
-						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
-							trans1[alpha](delta, gamma)
-								+= spinorCAO( beta, batchnum)*std::complex<double>(valRe, -valIm);
+							if (id1!=id3 and id2!=id3)
 							trans1[alpha+nCAO](delta, gamma)
 								+= spinorCAO( beta+nCAO, batchnum)*std::complex<double>(valRe, -valIm);
-						}
-					}
-				}
-			}
-
-			ii = 0;
-			if (id1!=id4 and id2!=id4 and id3!=id4)
-			for (const auto& alpha: orbitalIndexMap.at(i)) {
-				for (const auto& beta: orbitalIndexMap.at(j)) {
-					for (const auto& gamma: orbitalIndexMap.at(a)) {
-						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
-							trans1[gamma](beta, alpha)
-								+= spinorCAO(delta, batchnum)*std::complex<double>(valRe, -valIm);
+							if (id1!=id4 and id2!=id4 and id3!=id4)
 							trans1[gamma+nCAO](beta, alpha)
 								+= spinorCAO(delta+nCAO, batchnum)*std::complex<double>(valRe, -valIm);
 						}
 					}
 				}
 			}
-
-
-
 		}
 		re.close();
 		im.close();
