@@ -1,5 +1,6 @@
 #include "eritrans.hpp"
 #include "read_fourcenter.hpp"
+#include "misc.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -11,9 +12,10 @@
 #include <iomanip>
 
 #include <Eigen/Core>
+#include <Eigen/Dense>
 
 Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, const int nvirt,
-		Eigen::MatrixXcd& A, Eigen::MatrixXcd& B) {
+		Eigen::MatrixXcd& A, Eigen::MatrixXcd& B, const Eigen::MatrixXcd &spinor) {
 	std::cout << " :: starting spinor transformation of fourcenter integrals\n" << std::flush;
 
 	// reading coord file to know which atoms occur in which order
@@ -273,6 +275,20 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 
 
 
+	///* TO BE DELETED
+	const auto bra = readMatrixTransform("b0x");
+	const auto ket = readMatrixTransform("k0x");
+	const auto snx = (bra+ket).conjugate();
+	const int spinorSize = spinor.rows();
+	Eigen::MatrixXcd snxBig(spinorSize, spinorSize);
+	snxBig << snx, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+		Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snx;
+	const auto snx2cMO = spinor.adjoint() * snxBig.conjugate() * spinor;
+
+	Eigen::MatrixXcd b0ai = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
+	//*/
+
+
 	// init A and B matrices
 	A.resize( nocc*nvirt, nocc*nvirt );
 	B.resize( nocc*nvirt, nocc*nvirt );
@@ -286,7 +302,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	std::cout << "eritrafo memory requirement for first trafo step: " << sizeof(std::complex<double>)*2.0*nCAO*nCAO*nCAO/1000.0/1000.0 << " MB\n";
 	int batchnum;
 
-	for (batchnum=nocc; batchnum<nocc+nvirt; batchnum++) {
+	for (batchnum=0; batchnum<nocc+nvirt; batchnum++) {
 		// ============================================== beginning of one batch =======================================
 		// reading acutal real part
 		std::ifstream re("fourcenter.r");
@@ -303,29 +319,13 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			// determine indicies and degeneracy
 			std::istringstream iss(line);
 			std::string word;
+			int degeneracy = 1;
 			iss >> word; i = stoi(word);
 			iss >> word; j = stoi(word);
 			iss >> word; a = stoi(word);
 			getline(re, line);
 			getline(im, lineIm);
 			b = stoi(line);
-
-			// degeneracies of shells
-			const int idegen = orbitalIndexMap.at(i).size();
-			const int jdegen = orbitalIndexMap.at(j).size();
-			const int adegen = orbitalIndexMap.at(a).size();
-			const int bdegen = orbitalIndexMap.at(b).size();
-			const int totdegen = idegen * jdegen * adegen * bdegen;
-
-			double reshell[totdegen];
-			double imshell[totdegen];
-
-			for (int ii=0; ii<totdegen; ii++) {
-				getline(re, line);
-				reshell[ii] = stod(line);
-				getline(im, line);
-				imshell[ii] = stod(line);
-			}
 
 			// mega unclean aber scheiß drauf
 			const unsigned int id1 = i + 1'0000*j + 1'0000'0000*a + 1'0000'0000'0000*b;
@@ -334,83 +334,44 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 			const unsigned int id4 = b + 1'0000*a + 1'0000'0000*j + 1'0000'0000'0000*i;
 
 			// reading in integerals
-			int ii = 0;
 			for (const auto& alpha: orbitalIndexMap.at(i)) {
 				for (const auto& beta: orbitalIndexMap.at(j)) {
 					for (const auto& gamma: orbitalIndexMap.at(a)) {
 						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
+							getline(re, line);
+							getline(im, lineIm);
+							const double valRe = stod(line);
+							const double valIm = stod(lineIm);
 
 							// spin up + spin up
 							trans1[beta](gamma, delta)
 								+= spinorCAO(alpha, batchnum)*std::complex<double>(valRe,  valIm);
+							if (id1!=id2)
+							trans1[delta](alpha, beta)
+								+= spinorCAO(gamma, batchnum)*std::complex<double>(valRe,  valIm);
+							if (id1!=id3 and id2!=id3)
+							trans1[alpha](delta, gamma)
+								+= spinorCAO( beta, batchnum)*std::complex<double>(valRe, -valIm);
+							if (id1!=id4 and id2!=id4 and id3!=id4)
+							trans1[gamma](beta, alpha)
+								+= spinorCAO(delta, batchnum)*std::complex<double>(valRe, -valIm);
 
 							// spin down + spin down
 							trans1[beta+nCAO](gamma, delta)
 								+= spinorCAO(alpha+nCAO, batchnum)*std::complex<double>(valRe,  valIm);
-						}
-					}
-				}
-			}
-
-			ii = 0;
-			if (id1!=id2)
-			for (const auto& alpha: orbitalIndexMap.at(i)) {
-				for (const auto& beta: orbitalIndexMap.at(j)) {
-					for (const auto& gamma: orbitalIndexMap.at(a)) {
-						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
-							trans1[delta](alpha, beta)
-								+= spinorCAO(gamma, batchnum)*std::complex<double>(valRe,  valIm);
+							if (id1!=id2)
 							trans1[delta+nCAO](alpha, beta)
 								+= spinorCAO(gamma+nCAO, batchnum)*std::complex<double>(valRe,  valIm);
-						}
-					}
-				}
-			}
-
-			ii = 0;
-			if (id1!=id3 and id2!=id3)
-			for (const auto& alpha: orbitalIndexMap.at(i)) {
-				for (const auto& beta: orbitalIndexMap.at(j)) {
-					for (const auto& gamma: orbitalIndexMap.at(a)) {
-						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
-							trans1[alpha](delta, gamma)
-								+= spinorCAO( beta, batchnum)*std::complex<double>(valRe, -valIm);
+							if (id1!=id3 and id2!=id3)
 							trans1[alpha+nCAO](delta, gamma)
 								+= spinorCAO( beta+nCAO, batchnum)*std::complex<double>(valRe, -valIm);
-						}
-					}
-				}
-			}
-
-			ii = 0;
-			if (id1!=id4 and id2!=id4 and id3!=id4)
-			for (const auto& alpha: orbitalIndexMap.at(i)) {
-				for (const auto& beta: orbitalIndexMap.at(j)) {
-					for (const auto& gamma: orbitalIndexMap.at(a)) {
-						for (const auto& delta: orbitalIndexMap.at(b)) {
-							const double& valRe = reshell[ii];
-							const double& valIm = imshell[ii];
-							ii++;
-							trans1[gamma](beta, alpha)
-								+= spinorCAO(delta, batchnum)*std::complex<double>(valRe, -valIm);
+							if (id1!=id4 and id2!=id4 and id3!=id4)
 							trans1[gamma+nCAO](beta, alpha)
 								+= spinorCAO(delta+nCAO, batchnum)*std::complex<double>(valRe, -valIm);
 						}
 					}
 				}
 			}
-
-
-
 		}
 		re.close();
 		im.close();
@@ -419,7 +380,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		// second transformation step
 		// (a nu | kap lam)  ->  (a p | kap lam)
 		std::vector<Eigen::MatrixXcd> trans2(2*nCAO, Eigen::MatrixXcd::Zero(nCAO, nCAO));
-		for (int p=0; p<nocc; p++) {
+		for (int p=0; p<2*nSAO; p++) {
 			for (int kap=0; kap<nCAO; kap++) {
 				for (int lam=0; lam<nCAO; lam++) {
 					for (int nu=0; nu<2*nCAO; nu++) {
@@ -434,8 +395,8 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		// third transformation step
 		// (a p | kap lam)  ->  (a p | q lam)
 		std::vector<Eigen::MatrixXcd> trans3(2*nCAO, Eigen::MatrixXcd::Zero(2*nCAO, 2*nCAO));
-		for (int p=0; p<nocc; p++) {
-			for (int q=0; q<nocc; q++) {
+		for (int p=0; p<2*nSAO; p++) {
+			for (int q=0; q<2*nSAO; q++) {
 				for (int lam=0; lam<nCAO; lam++) {
 					for (int kap=0; kap<nCAO; kap++) {
 						// spin up + spin up
@@ -453,9 +414,9 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		// fourth transformation
 		// (a p | q lam)  ->  (a p | q r)
 		std::vector<Eigen::MatrixXcd> trans4(2*nCAO, Eigen::MatrixXcd::Zero(2*nCAO, 2*nCAO));
-		for (int p=0; p<nocc; p++) {
-			for (int q=0; q<nocc; q++) {
-				for (int r=0; r<nocc; r++) {
+		for (int p=0; p<2*nSAO; p++) {
+			for (int q=0; q<2*nSAO; q++) {
+				for (int r=0; r<2*nSAO; r++) {
 					for (int lam=0; lam<2*nCAO; lam++) {
 						trans4[p](q, r) += std::conj(spinorCAO(lam, r)) * trans3[p](q, lam);
 					}
@@ -465,8 +426,19 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		trans3.resize(0);
 		trans3.shrink_to_fit();
 
+		///* TO BE DELETED
+		for (int i=0; i<spinorSize; i++) {
+			for (int k=0; k<nocc; k++) {
+				for (int l=0; l<nocc; l++) {
+					const int a = batchnum;
+					b0ai(a, i) += snx2cMO(k, l) * (trans4[i](l, k) - trans4[k](l, i));
+				}
+			}
+		}
+		//*/
 		
 		// write to A and B
+		if (batchnum>=nocc)
 		for (int i=0; i<nocc; i++) {
 			for (int j=0; j<nocc; j++) {
 				for (int b=nocc; b<nocc+nvirt; b++) {
@@ -486,6 +458,18 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		// ============================================== end of one batch =============================================
 	}
 	std::cout << "eritrans ended successfully" << std::endl;
+
+	std::cout << "b0ai 0x real:\n" << std::fixed << std::setprecision(7) << b0ai.real() << "\n\n";
+	std::cout << "b0ai 0x imag:\n" << std::fixed << std::setprecision(7) << b0ai.imag() << "\n\n";
+
+	auto aobasis = spinor.adjoint().inverse() * b0ai.conjugate() * spinor.inverse();
+
+	std::cout << "aobasis? real:\n" << std::fixed << std::setprecision(7) << aobasis.real() << "\n\n";
+	std::cout << "aobasis? imag:\n" << std::fixed << std::setprecision(7) << aobasis.imag() << "\n\n";
+
+	//const auto aomo = spinor.adjoint() * aobasis * spinor;
+	//std::cout << "und wieder zurück real:\n" << std::fixed << std::setprecision(7) << aomo.real() << "\n\n";
+	//std::cout << "und wieder zurück imag:\n" << std::fixed << std::setprecision(7) << aomo.imag() << "\n\n";
 
 	return ailkasym;
 }

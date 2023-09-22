@@ -807,3 +807,195 @@ void saveBerry(const Eigen::MatrixXcd& berry) {
 	std::fstream("berrytensor.out", std::ios::trunc | std::ios::out)
 		<< std::fixed << std::setprecision(15) << berry.imag() << "\n";
 }
+
+Eigen::MatrixXcd readJSxi(std::string filename) {
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXcd transMat = Eigen::MatrixXcd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	
+
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+
+	using namespace std::complex_literals;
+
+	std::ifstream fil(filename);
+	if (fil.fail()) std::cout << "\n\n\nCOUND NOT READ FILE!!!\n\n\n";
+
+	double val;
+
+	getline(fil, line);
+	const int nlambda = std::stoi(line);
+	
+	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(nlambda, nlambda);
+
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {res(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {res(j, i) += std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {res(i, j) += 1.0i * std::stod(line);} catch (...) {}
+			if (i!=j) try {res(j, i) -= 1.0i * std::stod(line);} catch (...) {}
+		}
+	}
+
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
+	return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+}
+
+Eigen::MatrixXcd readKSxi(std::string filename) {
+	// read berrytrans.r for transformation matrix
+	std::ifstream transfile("berrytrans.r");
+	if (transfile.fail()) throw std::runtime_error("could not find transformation matrix!\n");
+	std::string line;
+	getline(transfile, line);
+	const int dima = std::stoi(line);
+	getline(transfile, line);
+	const int dimb = std::stoi(line);
+	Eigen::MatrixXcd transMat = Eigen::MatrixXcd::Zero(dima, dimb);
+	for (int i=0; i<dima; i++) {
+		for (int j=0; j<dimb; j++) {
+			getline(transfile, line);
+			transMat(i, j) += std::stod(line);
+		}
+	}
+	transfile.close();
+	
+
+	// read berryswap.r for reordering matrix
+	std::ifstream swapfile("berryswap.r");
+	if (swapfile.fail()) throw std::runtime_error("could not find swap matrix!\n");
+	getline(swapfile, line);
+	const int dims = std::stoi(line);
+	Eigen::MatrixXcd swapMat = Eigen::MatrixXcd::Zero(dims, dims);
+	for (int i=0; i<dims; i++) {
+		for (int j=0; j<dims; j++) {
+			getline(swapfile, line);
+			swapMat(i, j) += std::stod(line);
+		}
+	}
+	swapfile.close();
+
+	using namespace std::complex_literals;
+
+	std::ifstream fil(filename);
+	if (fil.fail()) std::cout << "\n\n\nCOUND NOT READ FILE!!!\n\n\n";
+
+	double val;
+
+	getline(fil, line);
+	const int nlambda = std::stoi(line);
+	
+	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(2*nlambda, 2*nlambda);
+	Eigen::MatrixXcd sym1 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd sym2 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd sym3 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd sym4 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd asym1 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd asym2 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd asym3 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+	Eigen::MatrixXcd asym4 = Eigen::MatrixXd::Zero(nlambda, nlambda);
+
+	// symmetric parts
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {sym1(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {sym1(j, i) += std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {sym2(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {sym2(j, i) += std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {sym3(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {sym3(j, i) += std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {sym4(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {sym4(j, i) += std::stod(line);} catch (...) {}
+		}
+	}
+
+	// asym parts
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {asym1(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {asym1(j, i) -= std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {asym2(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {asym2(j, i) -= std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {asym3(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {asym3(j, i) -= std::stod(line);} catch (...) {}
+		}
+	}
+	for (int i=0; i<nlambda; i++) {
+		for (int j=0; j<=i; j++) {
+			getline(fil, line);
+			try {asym4(i, j) += std::stod(line);} catch (...) {}
+			if (i!=j) try {asym4(j, i) -= std::stod(line);} catch (...) {}
+		}
+	}
+
+	const auto aatmp = sym1 + 1.0i * asym1;
+	const auto abtmp = 0.5*(sym2 + asym2) + 0.5i*(sym3 + asym3);
+	const auto batmp = 0.5*(sym2 - asym2) + 0.5i*(sym3 - asym3);
+	const auto bbtmp = sym4 + 1.0i * asym4;
+
+	//std::cout << "READMATRIX DONE.\n\n" << std::flush;
+	const auto aa = transMat.transpose() * swapMat.transpose() * aatmp.conjugate() * swapMat * transMat;
+	const auto ab = transMat.transpose() * swapMat.transpose() * abtmp.conjugate() * swapMat * transMat;
+	const auto ba = transMat.transpose() * swapMat.transpose() * batmp.conjugate() * swapMat * transMat;
+	const auto bb = transMat.transpose() * swapMat.transpose() * bbtmp.conjugate() * swapMat * transMat;
+	res << aa, ab, ba, bb;
+	//return transMat.transpose() * swapMat.transpose() * res.conjugate() * swapMat * transMat;
+	return res;
+}

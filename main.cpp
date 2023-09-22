@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
 	// compute electronic hessian
 	Eigen::MatrixXcd A, B;
-	const auto fciMO = eritrans(spinorCAO, nocc, nvirt, A, B);
+	const auto fciMO = eritrans(spinorCAO, nocc, nvirt, A, B, spinor);
 	// add spinor energies to diagonal of A
 	for (int i=0; i<nocc; i++) {
 		for (int a=nocc; a<spinorSize; a++) {
@@ -155,6 +155,7 @@ int main(int argc, char* argv[]) {
 	std::vector<Eigen::VectorXcd> ball;
 	splitExchange(atomNum, ncao);
 	splitJSxi(atomNum, ncao);
+	splitKSxi(atomNum, ncao);
 	split1efiles(atomNum, ncao);
 	std::cout << "\n\n :: calculating CPHF rhs vectors\n\n" << std::flush;
 	for (int nuc=0; nuc<atomNum; nuc++) {

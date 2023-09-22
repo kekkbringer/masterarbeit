@@ -19,3 +19,5 @@ void deleteTmpFiles(const int natom);
 Eigen::MatrixXcd readCoulomb(std::string filename);
 Eigen::MatrixXd readExchange(std::string filename, int c);
 void saveBerry(const Eigen::MatrixXcd& berry);
+Eigen::MatrixXcd readJSxi(std::string filename);
+Eigen::MatrixXcd readKSxi(std::string filename);
