@@ -674,45 +674,6 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	// fourcenter derivatives in SAO basis
 	const auto beginread = std::chrono::high_resolution_clock::now();
 	std::cout << std::flush << "\treading g4c..." << std::flush;
-	//const auto fcinx = fciAlt(nuc, cart);
-	//const auto endread = std::chrono::high_resolution_clock::now();
-	//const auto elapsedread = std::chrono::duration_cast<std::chrono::milliseconds>(endread-beginread);
-	//std::cout << "\tdone reading after " << elapsedread.count()*1e-3 << " s\n\n";
-	//std::cout << "\tcalculating 2e part of gradient...\n" << std::flush;
-
-	//auto begin1 = std::chrono::high_resolution_clock::now();
-	//std::cout << "\tdefine spin components... " << std::flush;
-	//// double den kack
-	//fourD fcinxD(spinorSize,
-	//		std::vector<std::vector<std::vector<std::complex<double>>>>(spinorSize,
-	//			std::vector<std::vector<std::complex<double>>>(spinorSize,
-	//				std::vector<std::complex<double>>(spinorSize))));
-
-	//for (int i=0; i<spinorSize; i++) {
-	//	for (int j=0; j<spinorSize; j++) {
-	//		for (int k=0; k<spinorSize; k++) {
-	//			for (int l=0; l<spinorSize; l++) {
-	//				fcinxD[i][j][k][l] = (0, 0);
-	//			}
-	//		}
-	//	}
-	//}
-	//for (int i=0; i<spinorSize/2; i++) {
-	//	for (int j=0; j<spinorSize/2; j++) {
-	//		for (int k=0; k<spinorSize/2; k++) {
-	//			for (int l=0; l<spinorSize/2; l++) {
-	//				fcinxD[i][j][k][l] = fcinx[i][j][k][l];
-	//				fcinxD[i][j][k+spinorSize/2][l+spinorSize/2] = fcinx[i][j][k][l];
-	//				fcinxD[i+spinorSize/2][j+spinorSize/2][k][l] = fcinx[i][j][k][l];
-	//				fcinxD[i+spinorSize/2][j+spinorSize/2][k+spinorSize/2][l+spinorSize/2] = fcinx[i][j][k][l];
-	//			}
-	//		}
-	//	}
-	//}
-	//auto end1 = std::chrono::high_resolution_clock::now();
-	//auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1-begin1);
-	//printf(" done after %.3fs\n", elapsed1.count()*1e-3);
-
 	
 
 	// ==================================== core hamilton ===================================
@@ -833,7 +794,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	fnx.transposeInPlace();
 
 
-	///* b0ai in ao basis test
+	/* b0ai in ao basis test
 	const auto eri = readFourcenter("");
 	const auto stilde = denMat * snxBig * denMat;
 	Eigen::MatrixXcd Jaa = Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2);
@@ -868,14 +829,21 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//*/
 
 	// read J[Sxi] and K[Sxi]
+	std::cout << "start reading G[Sxi] from file..." << std::endl;
 	const auto JSxi = readJSxi("jsxi" + std::to_string(nuc) + cartDict[cart]);
+	std::cout << "done reading J[Sxi]!" << std::endl;
 	const auto KSxi = readKSxi("ksxi" + std::to_string(nuc) + cartDict[cart]);
+	std::cout << "done reading K[Sxi]!\n" << std::endl;
 
+	std::cout << "transforming GSxi to spinor basis..." << std::endl;
+	const size_t nvirt = spinorSize - nocc;
 	Eigen::MatrixXcd GSxi(spinorSize, spinorSize);
 	GSxi << JSxi, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
 		Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), JSxi;
 	GSxi += 2.0*KSxi;
-	const auto GSxiMO = spinor.adjoint() * GSxi * spinor;
+	const auto GSxiMO = spinor.rightCols(nvirt).adjoint() * GSxi.conjugate() * spinor.leftCols(nocc);
+	//const auto GSxiMO = spinor.adjoint() * GSxi.conjugate() * spinor;
+	std::cout << "done transforming\n" << std::endl;
 
 	//std::cout << "GSxi MO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxiMO.real() << "\n\n";
 	//std::cout << "GSxi MO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxiMO.imag() << "\n\n";
@@ -883,50 +851,30 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	//std::cout << "GSxi AAAAAAO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxi.real() << "\n\n";
 	//std::cout << "GSxi AAAAAAO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxi.imag() << "\n\n";
 
-	Eigen::MatrixXcd Jt(spinorSize, spinorSize);
-	Jt << Jaa, Jab, Jba, Jbb;
-	Eigen::MatrixXcd Kt(spinorSize, spinorSize);
-	Kt << Kaa, Kab, Kba, Kbb;
-	const auto JtMO = spinor.adjoint() * Jt.conjugate() * spinor;
-	const auto KtMO = spinor.adjoint() * Kt.conjugate() * spinor;
-	const auto gmein = 2.0*Jt.conjugate() - Kt.conjugate();
+	//Eigen::MatrixXcd Jt(spinorSize, spinorSize);
+	//Jt << Jaa, Jab, Jba, Jbb;
+	//Eigen::MatrixXcd Kt(spinorSize, spinorSize);
+	//Kt << Kaa, Kab, Kba, Kbb;
+	//const auto JtMO = spinor.adjoint() * Jt.conjugate() * spinor;
+	//const auto KtMO = spinor.adjoint() * Kt.conjugate() * spinor;
+	//const auto gmein = 2.0*Jt.conjugate() - Kt.conjugate();
+	//const auto gmeinMO = spinor.adjoint() * gmein * spinor;
 
-	std::cout << "Ansgar J[Sxi] real:\n" << std::fixed << std::setprecision(7) << JSxi.real() << "\n\n";
-	std::cout << "Mein J[Sxi] real:\n" << std::fixed << std::setprecision(7) << 2.0*Jaa.real() << "\n\n";
-	std::cout << "Ansgar J[Sxi] imag:\n" << std::fixed << std::setprecision(7) << JSxi.imag() << "\n\n";
-	std::cout << "Mein J[Sxi] imag:\n" << std::fixed << std::setprecision(7) << 2.0*Jaa.imag() << "\n\n";
+	//std::cout << "Ansgar J[Sxi] real:\n" << std::fixed << std::setprecision(7) << JSxi.real() << "\n\n";
+	//std::cout << "Mein J[Sxi] real:\n" << std::fixed << std::setprecision(7) << 2.0*Jaa.real() << "\n\n";
+	//std::cout << "Ansgar J[Sxi] imag:\n" << std::fixed << std::setprecision(7) << JSxi.imag() << "\n\n";
+	//std::cout << "Mein J[Sxi] imag:\n" << std::fixed << std::setprecision(7) << 2.0*Jaa.imag() << "\n\n";
 
-	//std::cout << "GSxi MO real:\n" << std::fixed << std::setprecision(7) << (2.0*JtMO - KtMO).real() << "\n\n";
-	//std::cout << "GSxi MO imag:\n" << std::fixed << std::setprecision(7) << (2.0*JtMO - KtMO).imag() << "\n\n";
+	//std::cout << "Ansgar K[Sxi] real:\n" << std::fixed << std::setprecision(7) << KSxi.real() << "\n\n";
+	//std::cout << "Mein K[Sxi] real:\n" << std::fixed << std::setprecision(7) << 0.5*Kt.real() << "\n\n\n\n\n";
+	//std::cout << "Ansgar K[Sxi] imag:\n" << std::fixed << std::setprecision(7) << KSxi.imag() << "\n\n";
+	//std::cout << "Mein K[Sxi] imag:\n" << std::fixed << std::setprecision(7) << 0.5*Kt.imag() << "\n\n";
 
-	//std::cout << "GSxi AAAAAAO real:\n" << std::fixed << std::setprecision(7) << gmein.real() << "\n\n";
-	//std::cout << "GSxi AAAAAAO imag:\n" << std::fixed << std::setprecision(7) << gmein.imag() << "\n\n";
+	//std::cout << "Ansgar G[Sxi] real:\n" << std::fixed << std::setprecision(7) << GSxi.real() << "\n\n";
+	//std::cout << "Mein G[Sxi] real:\n" << std::fixed << std::setprecision(7) << gmein.real() << "\n\n\n\n\n";
+	//std::cout << "Ansgar G[Sxi] imag:\n" << std::fixed << std::setprecision(7) << GSxi.imag() << "\n\n";
+	//std::cout << "Mein G[Sxi] imag:\n" << std::fixed << std::setprecision(7) << gmein.imag() << "\n\n";
 
-	//std::cout << "JSxi von mir real:\n" << std::fixed << std::setprecision(7) << Jt.real() << "\n\n";
-	//std::cout << "JSxi von Ansgar real:\n" << std::fixed << std::setprecision(7) << 0.5*JSxi.real() << "\n\n";
-	//std::cout << "JSxi von mir imag:\n" << std::fixed << std::setprecision(7) << Jt.imag() << "\n\n";
-	//std::cout << "JSxi von Ansgar imag:\n" << std::fixed << std::setprecision(7) << 0.5*JSxi.imag() << "\n\n";
-	//std::cout << "\n\n\n";
-	//std::cout << "KSxi von mir real:\n" << std::fixed << std::setprecision(7) << Kt.real() << "\n\n";
-	//std::cout << "KSxi von Ansgar real:\n" << std::fixed << std::setprecision(7) << 2*KSxi.real() << "\n\n";
-	//std::cout << "KSxi von mir imag:\n" << std::fixed << std::setprecision(7) << Kt.imag() << "\n\n";
-	//std::cout << "KSxi von Ansgar imag:\n" << std::fixed << std::setprecision(7) << 2*KSxi.imag() << "\n\n";
-
-	//std::cout << "denmat real:\n" << std::fixed << std::setprecision(7) << denMat.real() << "\n\n";
-	//std::cout << "denmat imag:\n" << std::fixed << std::setprecision(7) << denMat.imag() << "\n\n";
-
-	//std::cout << "Sxi real:\n" << snxBig.real() << "\n\n";
-	//std::cout << "Sxi imag:\n" << snxBig.imag() << "\n\n";
-
-	////std::cout << "Jt:\n" << Jt << "\n\n";
-	////std::cout << "Kt:\n" << Kt << "\n\n";
-	//////std::cout << "densfull real:\n" << denMat.real() << "\n";
-	//////std::cout << "densfull imag:\n" << denMat.imag() << "\n";
-	////std::cout << "Sxi bigg:\n" << snxBig << "\n\n";
-	//std::cout << "D*Sxi*D real:\n" << stilde.real() << "\n\n";
-	//std::cout << "D*Sxi*D imag:\n" << stilde.imag() << "\n\n";
-
-	const size_t nvirt = spinorSize - nocc;
 	Eigen::VectorXcd b0ai = Eigen::VectorXcd::Zero(nocc*nvirt);
 
 	const auto fnx2cMO = spinor.adjoint() * fnx.conjugate() * spinor;
@@ -952,34 +900,34 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 		}
 	}
 	std::cout << " 1e part done" << std::flush;
-	Eigen::VectorXcd b0aiTEST = Eigen::VectorXcd::Zero(nocc*nvirt);
-	Eigen::VectorXcd b0aiTEST2 = Eigen::VectorXcd::Zero(nocc*nvirt);
-	Eigen::VectorXcd b0aiTEST3 = Eigen::VectorXcd::Zero(nocc*nvirt);
+	std::cout << "\nAO part...\n" << std::flush;
+	//Eigen::VectorXcd b0aiTEST = Eigen::VectorXcd::Zero(nocc*nvirt);
+	//Eigen::VectorXcd b0aiTEST2 = Eigen::VectorXcd::Zero(nocc*nvirt);
+	//Eigen::VectorXcd b0aiTEST3 = Eigen::VectorXcd::Zero(nocc*nvirt);
 	for (int i=0; i<nocc; i++) {
-		for (int k=0; k<nocc; k++) {
-			for (int l=0; l<nocc; l++) {
+		//for (int k=0; k<nocc; k++) {
+			//for (int l=0; l<nocc; l++) {
 				for (int a=nocc; a<spinorSize; a++) {
-					//b0ai(i*nvirt + a - nocc) += std::conj(GSxi(a, i));
-					b0ai(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
-					b0aiTEST2(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
-					b0aiTEST(i*nvirt + a - nocc) = GSxiMO(a, i);
-					b0aiTEST3(i*nvirt + a - nocc) = 2.0*JtMO(a, i) - KtMO(a, i);
+					//b0ai(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
+					//b0aiTEST2(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
+					b0ai(i*nvirt + a - nocc) += GSxiMO(a-nocc, i);
+					//b0aiTEST3(i*nvirt + a - nocc) = gmeinMO(a, i);
 				}
-			}
-		}
+			//}
+		//}
 	}
-	//std::cout << "\nb0ai neu:\n" << b0aiTEST << "\n\n";
-	//std::cout << "\nSxi*(ai||lk):\n" << b0aiTEST2 << "\n\n";
-	std::cout << "\nAnsgar real\t\tIch real\t\tMein neues\n";
-	for (int i=0; i<nocc*nvirt; i++) {
-		std::cout << std::fixed << std::setprecision(12)
-			<< b0aiTEST(i).real() << "\t\t" << b0aiTEST2(i).real() << "\t\t" << b0aiTEST3(i).real() << "\n";
-	}
-	std::cout << "Ansgar imag\t\tIch imag\t\tmain neues\n";
-	for (int i=0; i<nocc*nvirt; i++) {
-		std::cout << std::fixed << std::setprecision(12)
-			<< b0aiTEST(i).imag() << "\t\t" << b0aiTEST2(i).imag() << "\t\t" << b0aiTEST3(i).imag() << "\n";
-	}
+	std::cout << "\nAO part done\n\n" << std::flush;
+	//std::cout << "\nAnsgar real\t\tIch real\n";
+	//for (int i=0; i<nocc*nvirt; i++) {
+	//	std::cout << std::fixed << std::setprecision(12)
+	//		<< b0aiTEST(i).real() << "\t\t" << b0aiTEST(i).real()-b0aiTEST2(i).real() << "\n";
+	//}
+	//std::cout << "Ansgar imag\t\tIch imag\n";
+	//for (int i=0; i<nocc*nvirt; i++) {
+	//	std::cout << std::fixed << std::setprecision(12)
+	//		<< b0aiTEST(i).imag() << "\t\t" << b0aiTEST(i).imag()-b0aiTEST2(i).imag() << "\n";
+	//}
+	//std::cout << "delta norm =  " << (b0aiTEST-b0aiTEST2).norm() << std::endl;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin);
 	printf("\ttotal done after %.3fs\n", elapsed.count()*1e-3);

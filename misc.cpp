@@ -633,12 +633,12 @@ void deleteTmpFiles(const int natom) {
 	std::remove("berrytrans.r");
 	std::remove("berrytrans.i");
 	for (int I=0; I<natom; I++) {
-		std::remove(("b0ai" + std::to_string(I) + "_0.r").c_str());
-		std::remove(("b0ai" + std::to_string(I) + "_0.i").c_str());
-		std::remove(("b0ai" + std::to_string(I) + "_1.r").c_str());
-		std::remove(("b0ai" + std::to_string(I) + "_1.i").c_str());
-		std::remove(("b0ai" + std::to_string(I) + "_2.r").c_str());
-		std::remove(("b0ai" + std::to_string(I) + "_2.i").c_str());
+		//std::remove(("b0ai" + std::to_string(I) + "_0.r").c_str());
+		//std::remove(("b0ai" + std::to_string(I) + "_0.i").c_str());
+		//std::remove(("b0ai" + std::to_string(I) + "_1.r").c_str());
+		//std::remove(("b0ai" + std::to_string(I) + "_1.i").c_str());
+		//std::remove(("b0ai" + std::to_string(I) + "_2.r").c_str());
+		//std::remove(("b0ai" + std::to_string(I) + "_2.i").c_str());
 
 		std::remove(("b" + std::to_string(I) + "x.r").c_str());
 		std::remove(("b" + std::to_string(I) + "x.i").c_str());
@@ -660,6 +660,14 @@ void deleteTmpFiles(const int natom) {
 		std::remove(("k" + std::to_string(I) + "y.i").c_str());
 		std::remove(("k" + std::to_string(I) + "z.r").c_str());
 		std::remove(("k" + std::to_string(I) + "z.i").c_str());
+
+		std::remove(("jsxi" + std::to_string(I) + "x").c_str());
+		std::remove(("jsxi" + std::to_string(I) + "y").c_str());
+		std::remove(("jsxi" + std::to_string(I) + "z").c_str());
+
+		std::remove(("ksxi" + std::to_string(I) + "x").c_str());
+		std::remove(("ksxi" + std::to_string(I) + "y").c_str());
+		std::remove(("ksxi" + std::to_string(I) + "z").c_str());
 
 		std::remove(("snxbraip" + std::to_string(I) + "_0.r").c_str());
 		std::remove(("snxbraip" + std::to_string(I) + "_0.i").c_str());
@@ -915,7 +923,7 @@ Eigen::MatrixXcd readKSxi(std::string filename) {
 	getline(fil, line);
 	const int nlambda = std::stoi(line);
 	
-	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(2*nlambda, 2*nlambda);
+	Eigen::MatrixXcd res = Eigen::MatrixXcd::Zero(2*dimb, 2*dimb);
 	Eigen::MatrixXcd sym1 = Eigen::MatrixXd::Zero(nlambda, nlambda);
 	Eigen::MatrixXcd sym2 = Eigen::MatrixXd::Zero(nlambda, nlambda);
 	Eigen::MatrixXcd sym3 = Eigen::MatrixXd::Zero(nlambda, nlambda);

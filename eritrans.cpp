@@ -275,7 +275,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 
 
 
-	///* TO BE DELETED
+	/* TO BE DELETED
 	const auto bra = readMatrixTransform("b0x");
 	const auto ket = readMatrixTransform("k0x");
 	const auto snx = (bra+ket).conjugate();
@@ -302,7 +302,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	std::cout << "eritrafo memory requirement for first trafo step: " << sizeof(std::complex<double>)*2.0*nCAO*nCAO*nCAO/1000.0/1000.0 << " MB\n";
 	int batchnum;
 
-	for (batchnum=0; batchnum<nocc+nvirt; batchnum++) {
+	for (batchnum=nocc; batchnum<nocc+nvirt; batchnum++) {
 		// ============================================== beginning of one batch =======================================
 		// reading acutal real part
 		std::ifstream re("fourcenter.r");
@@ -426,7 +426,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		trans3.resize(0);
 		trans3.shrink_to_fit();
 
-		///* TO BE DELETED
+		/* TO BE DELETED
 		for (int i=0; i<spinorSize; i++) {
 			for (int k=0; k<nocc; k++) {
 				for (int l=0; l<nocc; l++) {
@@ -438,7 +438,7 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 		//*/
 		
 		// write to A and B
-		if (batchnum>=nocc)
+		//if (batchnum>=nocc)
 		for (int i=0; i<nocc; i++) {
 			for (int j=0; j<nocc; j++) {
 				for (int b=nocc; b<nocc+nvirt; b++) {
@@ -459,13 +459,13 @@ Eigen::VectorXcd& eritrans(const Eigen::MatrixXcd &spinorCAO, const int nocc, co
 	}
 	std::cout << "eritrans ended successfully" << std::endl;
 
-	std::cout << "b0ai 0x real:\n" << std::fixed << std::setprecision(7) << b0ai.real() << "\n\n";
-	std::cout << "b0ai 0x imag:\n" << std::fixed << std::setprecision(7) << b0ai.imag() << "\n\n";
+	//std::cout << "b0ai 0x real:\n" << std::fixed << std::setprecision(7) << b0ai.real() << "\n\n";
+	//std::cout << "b0ai 0x imag:\n" << std::fixed << std::setprecision(7) << b0ai.imag() << "\n\n";
 
-	auto aobasis = spinor.adjoint().inverse() * b0ai.conjugate() * spinor.inverse();
+	//auto aobasis = spinor.adjoint().inverse() * b0ai.conjugate() * spinor.inverse();
 
-	std::cout << "aobasis? real:\n" << std::fixed << std::setprecision(7) << aobasis.real() << "\n\n";
-	std::cout << "aobasis? imag:\n" << std::fixed << std::setprecision(7) << aobasis.imag() << "\n\n";
+	//std::cout << "aobasis? real:\n" << std::fixed << std::setprecision(7) << aobasis.real() << "\n\n";
+	//std::cout << "aobasis? imag:\n" << std::fixed << std::setprecision(7) << aobasis.imag() << "\n\n";
 
 	//const auto aomo = spinor.adjoint() * aobasis * spinor;
 	//std::cout << "und wieder zurück real:\n" << std::fixed << std::setprecision(7) << aomo.real() << "\n\n";

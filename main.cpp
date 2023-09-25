@@ -324,14 +324,44 @@ int main(int argc, char* argv[]) {
 
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
-	//std::cout << "\n\n\nBerry-curvature term 1:\n" <<  berry.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 1:\n" <<  berry.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
+	std::cout << "\n\n\nBerry 1+5:\n" << berry.imag() + berry5.imag() << "\n\n";
+	const auto b15 = berry + berry5 + berry.adjoint() + berry5.adjoint();
+	std::cout << "\n\n\nBerry 1+5:\n" << b15.imag() << "\n\n";
 	std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
 	std::cout << "================================================================================\n";
 	saveBerry(berry6);
+
+	// write 1+5 to file berry15
+	std::ofstream berry15("berry15");
+	for (int iat=0; iat<atomNum; iat++) {
+		for (int icart=0; icart<3; icart++) {
+			for (int jat=0; jat<atomNum; jat++) {
+				for (int jcart=0; jcart<3; jcart++) {
+					berry15 << std::fixed << std::setprecision(16) << b15(3*iat+icart, 3*jat+jcart).imag() << "\n";
+				}
+			}
+		}
+	}
+	berry15.close();
+
+	// write new file for escf to disk
+	for (int I=0; I<atomNum; I++) {
+		for (int alpha=0; alpha<3; alpha++) {
+			// bra derivative
+			const auto snxbraIA = readMatrixTransform("b" + std::to_string(I) + cartDict[alpha]);
+			Eigen::MatrixXcd tmp1(spinorSize, spinorSize);
+			tmp1 << snxbraIA, Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2),
+				Eigen::MatrixXcd::Zero(spinorSize/2, spinorSize/2), snxbraIA;
+			const auto snxbraIAMOip = spinor.leftCols(nocc).adjoint() * tmp1 * spinor.rightCols(nvirt);
+			std::string filename = "snxbraia" + std::to_string(I) + "_" + std::to_string(alpha);
+			saveMatrix(snxbraIAMOip, filename);
+		}
+	}
 
 	// calculate shielding charges
 	Eigen::MatrixXd chargeFluct = Eigen::MatrixXd::Zero(atomNum, atomNum);
@@ -404,7 +434,7 @@ int main(int argc, char* argv[]) {
 	printf("   Total:                          %.3f s\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
 
 	// delete temporary scratch files
-	//deleteTmpFiles(atomNum);
+	deleteTmpFiles(atomNum);
 	std::cout << std::endl;
 	// end of Berry section
 
