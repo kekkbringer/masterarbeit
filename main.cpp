@@ -40,7 +40,7 @@ using namespace std::complex_literals;
  *
  */
 int main(int argc, char* argv[]) {
-	std::cout << "berryNODELETE\n";
+	std::cout << "berryRHS?\n";
 	setRestart(0);
 
 	/**********************************************************************
@@ -112,13 +112,13 @@ int main(int argc, char* argv[]) {
 
 	// compute electronic hessian
 	Eigen::MatrixXcd A, B;
-	const auto fciMO = eritrans(spinorCAO, nocc, nvirt, A, B, spinor);
-	// add spinor energies to diagonal of A
-	for (int i=0; i<nocc; i++) {
-		for (int a=nocc; a<spinorSize; a++) {
-			A( i*nvirt+a-nocc, i*nvirt+a-nocc ) += epsilon[a] - epsilon[i];
-		}
-	}
+	//const auto fciMO = eritrans(spinorCAO, nocc, nvirt, A, B, spinor);
+	//// add spinor energies to diagonal of A
+	//for (int i=0; i<nocc; i++) {
+	//	for (int a=nocc; a<spinorSize; a++) {
+	//		A( i*nvirt+a-nocc, i*nvirt+a-nocc ) += epsilon[a] - epsilon[i];
+	//	}
+	//}
 
 	const auto end1 = std::chrono::high_resolution_clock::now();
 	setRestart(1);
@@ -161,8 +161,8 @@ int main(int argc, char* argv[]) {
 	for (int nuc=0; nuc<atomNum; nuc++) {
 		for (int cart=0; cart<3; cart++) {
 			const auto beginrhs = std::chrono::high_resolution_clock::now();
-			const auto b0ai = berryRHS(nuc, cart, fciMO);
-			ball.push_back(b0ai);
+			const auto b0ai = berryRHS(nuc, cart);
+			//ball.push_back(b0ai);
 			const auto endrhs = std::chrono::high_resolution_clock::now();
 			const auto elapsedrhs = std::chrono::duration_cast<std::chrono::milliseconds>(endrhs-beginrhs);
 			std::cout << "after " << elapsedrhs.count()*1e-3 << " s\n\n" << std::endl;
@@ -190,17 +190,17 @@ int main(int argc, char* argv[]) {
 	 * again, later.
 	 */
 	std::cout << " :: solving CPHF equation...   " << std::flush;
-	const auto u = cphf(A, B, ball); // solving CPHF
-	std::cout << "\tsaving to disk...   " << std::flush;
-	int ind=0;
-	for (int nuc=0; nuc<atomNum; nuc++) {
-		for (int cart=0; cart<3; cart++) {
-			saveVector(u[ind], "u" + std::to_string(nuc) + "_" + std::to_string(cart));
-			ind++;
-		}
-	}
-	std::cout << "done!\n";
-	std::cout << std::flush;
+	//const auto u = cphf(A, B, ball); // solving CPHF
+	//std::cout << "\tsaving to disk...   " << std::flush;
+	//int ind=0;
+	//for (int nuc=0; nuc<atomNum; nuc++) {
+	//	for (int cart=0; cart<3; cart++) {
+	//		saveVector(u[ind], "u" + std::to_string(nuc) + "_" + std::to_string(cart));
+	//		ind++;
+	//	}
+	//}
+	//std::cout << "done!\n";
+	//std::cout << std::flush;
 	const auto end2 = std::chrono::high_resolution_clock::now();
 	setRestart(3);
 	// end of CPHF section
@@ -270,8 +270,8 @@ int main(int argc, char* argv[]) {
 	std::cout << "\ncalculating Berry curvature tensor..." << std::endl;
 	for (int I=0; I<atomNum; I++) {
 		for (int alpha=0; alpha<3; alpha++) {
-			// U vector I alpha
-			const auto uIA = readVector("u" + std::to_string(I) + "_" + std::to_string(alpha));
+			//// U vector I alpha
+			//const auto uIA = readVector("u" + std::to_string(I) + "_" + std::to_string(alpha));
 			
 			// bra derivative overlap matrix
 			const std::string filename = "snxbraip" + std::to_string(I) + "_" + std::to_string(alpha);
@@ -281,8 +281,8 @@ int main(int argc, char* argv[]) {
 				int betamax = 3;
 				if (I==J) betamax = alpha;
 				for (int beta=0; beta<betamax; beta++) {
-					// U vector J beta
-					auto uJB = readVector("u" + std::to_string(J) + "_" + std::to_string(beta));
+					//// U vector J beta
+					//auto uJB = readVector("u" + std::to_string(J) + "_" + std::to_string(beta));
 					
 					// ket derivative overlap matrix
 					const std::string filename2 = "snxketip" + std::to_string(J) + "_" + std::to_string(beta);
@@ -299,21 +299,21 @@ int main(int argc, char* argv[]) {
 					for (int i=0; i<nocc; i++) {
 						berry(3*I+alpha, 3*J+beta) += (spinor.col(i).adjoint() * tmp3 * spinor.col(i))(0, 0);
 						
-						for (int a=nocc; a<spinorSize; a++) {
-							berry2(3*I+alpha, 3*J+beta) += snxketJBMOip(a, i) * std::conj(uIA(i*nvirt+a-nocc));
-							berry3(3*I+alpha, 3*J+beta) += snxbraIAMOip(i, a) * uJB(i*nvirt+a-nocc);
-							berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
-						}
+						//for (int a=nocc; a<spinorSize; a++) {
+						//	berry2(3*I+alpha, 3*J+beta) += snxketJBMOip(a, i) * std::conj(uIA(i*nvirt+a-nocc));
+						//	berry3(3*I+alpha, 3*J+beta) += snxbraIAMOip(i, a) * uJB(i*nvirt+a-nocc);
+						//	berry4(3*I+alpha, 3*J+beta) += uIA(i*nvirt+a-nocc + nocc*nvirt) * uJB(i*nvirt+a-nocc);
+						//}
 						for (int j=0; j<nocc; j++) {
 							berry5(3*I+alpha, 3*J+beta) -= snxbraIAMOip(i, j) * snxketJBMOip(j, i);
 						}
 					}
-					berry6(3*I+alpha, 3*J+beta) = berry(3*I+alpha, 3*J+beta)
-									+ berry2(3*I+alpha, 3*J+beta)
-									+ berry3(3*I+alpha, 3*J+beta)
-									+ berry4(3*I+alpha, 3*J+beta)
-									+ berry5(3*I+alpha, 3*J+beta);
-					berry6(3*J+beta, 3*I+alpha) = std::conj(berry6(3*I+alpha, 3*J+beta));
+					//berry6(3*I+alpha, 3*J+beta) = berry(3*I+alpha, 3*J+beta)
+					//				+ berry2(3*I+alpha, 3*J+beta)
+					//				+ berry3(3*I+alpha, 3*J+beta)
+					//				+ berry4(3*I+alpha, 3*J+beta)
+					//				+ berry5(3*I+alpha, 3*J+beta);
+					//berry6(3*J+beta, 3*I+alpha) = std::conj(berry6(3*I+alpha, 3*J+beta));
 				}
 			}
 		}
@@ -324,17 +324,17 @@ int main(int argc, char* argv[]) {
 
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
-	std::cout << "\n\n\nBerry-curvature term 1:\n" <<  berry.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
-	std::cout << "\n\n\nBerry 1+5:\n" << berry.imag() + berry5.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry-curvature term 1:\n" <<  berry.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry 1+5:\n" << berry.imag() + berry5.imag() << "\n\n";
 	const auto b15 = berry + berry5 + berry.adjoint() + berry5.adjoint();
-	std::cout << "\n\n\nBerry 1+5:\n" << b15.imag() << "\n\n";
-	std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
-	std::cout << "================================================================================\n";
-	saveBerry(berry6);
+	//std::cout << "\n\n\nBerry 1+5:\n" << b15.imag() << "\n\n";
+	//std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
+	//std::cout << "================================================================================\n";
+	//saveBerry(berry6);
 
 	// write 1+5 to file berry15
 	std::ofstream berry15("berry15");
@@ -363,61 +363,61 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	// calculate shielding charges
-	Eigen::MatrixXd chargeFluct = Eigen::MatrixXd::Zero(atomNum, atomNum);
-	for (int I=0; I<atomNum; I++) {
-		for (int J=0; J<atomNum; J++) {
-			// get IJ block from total berry curvature
-			const Eigen::MatrixXd oij = berry6.block<3,3>(3*I, 3*J).imag();
+	//// calculate shielding charges
+	//Eigen::MatrixXd chargeFluct = Eigen::MatrixXd::Zero(atomNum, atomNum);
+	//for (int I=0; I<atomNum; I++) {
+	//	for (int J=0; J<atomNum; J++) {
+	//		// get IJ block from total berry curvature
+	//		const Eigen::MatrixXd oij = berry6.block<3,3>(3*I, 3*J).imag();
 
-			// get antisymmetric part
-			const auto oijas = 0.5*(oij-oij.transpose());
+	//		// get antisymmetric part
+	//		const auto oijas = 0.5*(oij-oij.transpose());
 
-			chargeFluct(I, J) = oijas(2, 1) * Bx
-					  + oijas(0, 2) * By
-					  + oijas(1, 0) * Bz;
-			chargeFluct(I, J) /= Bx*Bx + By*By + Bz*Bz; // caution is needed, this only really works for magnetic fields in z direction!
-			//chargeFluct(I, J) *= 2.35051756758e5; // TESLA, ÄNDERE DAS NOCH UNBEDINGT, DU IDIOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		}
-	}
-	std::cout << "\n\ncharge fluctuation:\n" << chargeFluct << "\n\n";
-
-
-	// kurz ins coord file nach den Atomen gucken... :D
-	std::ifstream coord("coord");
-	//std::string line, word;
-	std::string word;
-	std::vector<std::string> atoms;
-	getline(coord, line); //$coord
-	for (int i=0; i<atomNum; i++) {
-		getline(coord, line);
-		std::istringstream iss(line);
-		iss >> word; // x
-		iss >> word; // y
-		iss >> word; // z
-		iss >> word; // atom
-		atoms.push_back(word);
-	}
-	coord.close();
+	//		chargeFluct(I, J) = oijas(2, 1) * Bx
+	//				  + oijas(0, 2) * By
+	//				  + oijas(1, 0) * Bz;
+	//		chargeFluct(I, J) /= Bx*Bx + By*By + Bz*Bz; // caution is needed, this only really works for magnetic fields in z direction!
+	//		//chargeFluct(I, J) *= 2.35051756758e5; // TESLA, ÄNDERE DAS NOCH UNBEDINGT, DU IDIOT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//	}
+	//}
+	//std::cout << "\n\ncharge fluctuation:\n" << chargeFluct << "\n\n";
 
 
-	// calculate resulting partial charges
-	std::cout << "\npartial charges:\n";
-	std::cout << "Atom\telec. charge \tnuc. charge\ttotal\n";
-	std::vector<double> partialCharges;
-	double esum=0.0, nsum=0.0;
-	for (int I=0; I<atomNum; I++) {
-		double q = 0.0;
-		for (int J=0; J<atomNum; J++) {
-			q += chargeFluct(I, J);
-		}
-		partialCharges.push_back(q);
-		printf(" %u%s\t% 10.7f\t% 10.7f\t% 10.7f\n", I+1, atoms[I].c_str(), q, (double)chargeOf(atoms[I]), q+chargeOf(atoms[I]));
-		esum += q;
-		nsum += chargeOf(atoms[I]);
-	}
-	std::cout << "-----------------------------------------------------\n";
-	printf(" sum\t% 10.7f\t% 10.7f\t% 10.7f\n", esum, nsum, esum+nsum);
+	//// kurz ins coord file nach den Atomen gucken... :D
+	//std::ifstream coord("coord");
+	////std::string line, word;
+	//std::string word;
+	//std::vector<std::string> atoms;
+	//getline(coord, line); //$coord
+	//for (int i=0; i<atomNum; i++) {
+	//	getline(coord, line);
+	//	std::istringstream iss(line);
+	//	iss >> word; // x
+	//	iss >> word; // y
+	//	iss >> word; // z
+	//	iss >> word; // atom
+	//	atoms.push_back(word);
+	//}
+	//coord.close();
+
+
+	//// calculate resulting partial charges
+	//std::cout << "\npartial charges:\n";
+	//std::cout << "Atom\telec. charge \tnuc. charge\ttotal\n";
+	//std::vector<double> partialCharges;
+	//double esum=0.0, nsum=0.0;
+	//for (int I=0; I<atomNum; I++) {
+	//	double q = 0.0;
+	//	for (int J=0; J<atomNum; J++) {
+	//		q += chargeFluct(I, J);
+	//	}
+	//	partialCharges.push_back(q);
+	//	printf(" %u%s\t% 10.7f\t% 10.7f\t% 10.7f\n", I+1, atoms[I].c_str(), q, (double)chargeOf(atoms[I]), q+chargeOf(atoms[I]));
+	//	esum += q;
+	//	nsum += chargeOf(atoms[I]);
+	//}
+	//std::cout << "-----------------------------------------------------\n";
+	//printf(" sum\t% 10.7f\t% 10.7f\t% 10.7f\n", esum, nsum, esum+nsum);
 	
 	
 	// time stats
@@ -426,11 +426,11 @@ int main(int argc, char* argv[]) {
 	const auto elapsedi = std::chrono::duration_cast<std::chrono::milliseconds>(end2-interRHScphf);
 	const auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3-begin3);
 	std::cout << "\n\n =================== time stats ===================\n";
-	printf("   Calculate electronic Hessian:   %.3f s\n", elapsed1.count()*1e-3);
-	printf("   Calculate RHS:                  %.3f s\n", elapsed2.count()*1e-3);
-	printf("   Solve CPHF:                     %.3f s\n", elapsedi.count()*1e-3);
-	printf("   Calculate Berry-Curvature:      %.3f s\n", elapsed3.count()*1e-3);
-	printf(" --------------------------------------------------\n");
+	//printf("   Calculate electronic Hessian:   %.3f s\n", elapsed1.count()*1e-3);
+	//printf("   Calculate RHS:                  %.3f s\n", elapsed2.count()*1e-3);
+	//printf("   Solve CPHF:                     %.3f s\n", elapsedi.count()*1e-3);
+	//printf("   Calculate Berry-Curvature:      %.3f s\n", elapsed3.count()*1e-3);
+	//printf(" --------------------------------------------------\n");
 	printf("   Total:                          %.3f s\n\n", (elapsed1.count()+elapsed2.count()+elapsed3.count()) * 1e-3);
 
 	// delete temporary scratch files

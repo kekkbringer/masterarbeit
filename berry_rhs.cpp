@@ -354,7 +354,7 @@ void split1efiles(int atomNum, int ncao) {
 	std::cout << "   done\n\n\n";
 }
 
-Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd& ailkasym) {
+Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//std::cout << "BERRY\n\n" << std::flush;
 	std::cout << std::setprecision(10);
 	const std::string cartDict[] = {"x", "y", "z"};

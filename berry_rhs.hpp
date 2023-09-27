@@ -8,4 +8,4 @@ void splitExchange(int atomNum, int ncao);
 void splitJSxi(int atomNum, int ncao);
 void splitKSxi(int atomNum, int ncao);
 void split1efiles(int atomnum, int ncao);
-Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd& ailkasym);
+Eigen::VectorXcd berryRHS(const int nuc, const int cart);
