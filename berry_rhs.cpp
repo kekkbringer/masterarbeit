@@ -659,10 +659,24 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//std::cout << std::setprecision(3);
 	//std::cout << "\n\nzz nx:\n" << zznx << "\n";
 
+
+
+
+	// This section is purely for debugging purposes, it is concerned with what contributions enter the rhs
 	Eigen::MatrixXcd fnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
-	fnx =  zxnx.transpose();
-	fnx += zynx.transpose();
-	fnx += zznx.transpose();
+	constexpr bool FZxi = true;		// derivative spin zeeman
+	constexpr bool hgrad = true;		// derivative core hamiltonian
+	constexpr bool Jxi_D = false;		// Jxi[D], derivative Coulomb integrals
+	constexpr bool Kxi_D = false;		// Kxi[D], derivative Exchange integrals
+	constexpr bool G_Sxi = true;		// G[Sxi], Coulomb and Exchange integrals contracted with DSD
+	constexpr bool Sxi_epsilon = true;	// Sxi_i*eps_i
+
+
+
+
+	if constexpr (FZxi) fnx =  zxnx.transpose();
+	if constexpr (FZxi) fnx += zynx.transpose();
+	if constexpr (FZxi) fnx += zznx.transpose();
 	//std::cout << "\nFZ nx total:\n" << fnx << "\n\n";
 	Eigen::MatrixXcd zetotnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	zetotnx = zxnx;
@@ -691,7 +705,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	Eigen::MatrixXcd hnxBig(spinorSize, spinorSize);
 	hnxBig << hnx.conjugate(), Eigen::MatrixXcd::Zero(matrixSize, matrixSize),
 		Eigen::MatrixXcd::Zero(matrixSize, matrixSize), hnx.conjugate();
-	fnx += hnxBig.transpose();
+	if constexpr (hgrad) fnx += hnxBig.transpose();
 
 
 
@@ -775,9 +789,9 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//fockSAO += C.transpose();
 	//fockSAO += K.transpose();
 	std::cout << "\tupdating fock derivative..." << std::flush;
-	fnx.block(0, 0, spinorSize/2, spinorSize/2) += Cnx.transpose();
-	fnx.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2) += Cnx.transpose();
-	fnx += Knx.transpose();
+	if constexpr (Jxi_D) fnx.block(0, 0, spinorSize/2, spinorSize/2) += Cnx.transpose();
+	if constexpr (Jxi_D) fnx.block(spinorSize/2, spinorSize/2, spinorSize/2, spinorSize/2) += Cnx.transpose();
+	if constexpr (Kxi_D) fnx += Knx.transpose();
 	std::cout << " done.\n" << std::flush;
 
 
@@ -848,8 +862,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//std::cout << "GSxi MO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxiMO.real() << "\n\n";
 	//std::cout << "GSxi MO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxiMO.imag() << "\n\n";
 
-	//std::cout << "GSxi AAAAAAO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxi.real() << "\n\n";
-	//std::cout << "GSxi AAAAAAO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxi.imag() << "\n\n";
+	std::cout << "GSxi AAAAAAO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxi.real() << "\n\n";
+	std::cout << "GSxi AAAAAAO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxi.imag() << "\n\n";
 
 	//Eigen::MatrixXcd Jt(spinorSize, spinorSize);
 	//Jt << Jaa, Jab, Jba, Jbb;
@@ -877,6 +891,9 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 
 	Eigen::VectorXcd b0ai = Eigen::VectorXcd::Zero(nocc*nvirt);
 
+	//std::cout << "fnx real:\n" << std::fixed << std::setprecision(5) << fnx.real() << "\n\n";
+	//std::cout << "fnx imag:\n" << std::fixed << std::setprecision(5) << fnx.imag() << "\n\n";
+
 	const auto fnx2cMO = spinor.adjoint() * fnx.conjugate() * spinor;
 	const auto snx2cMO = spinor.adjoint() * snxBig.conjugate() * spinor;
 
@@ -896,7 +913,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 		for (int a=nocc; a<spinorSize; a++) {
 			const int index = i*nvirt + a - nocc;
 			b0ai(index) = -fnx2cMO(a, i);
-			b0ai(index) += snx2cMO(a, i) * epsilon[i];
+			if constexpr (Sxi_epsilon) b0ai(index) += snx2cMO(a, i) * epsilon[i];
 		}
 	}
 	std::cout << " 1e part done" << std::flush;
@@ -910,7 +927,7 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 				for (int a=nocc; a<spinorSize; a++) {
 					//b0ai(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
 					//b0aiTEST2(i*nvirt + a - nocc) += snxVec(l+nocc*k) * ailkasym( (a-nocc) + nvirt*l + nvirt*nocc*k + nvirt*nocc*nocc*i );
-					b0ai(i*nvirt + a - nocc) += GSxiMO(a-nocc, i);
+					if constexpr (G_Sxi) b0ai(i*nvirt + a - nocc) += GSxiMO(a-nocc, i);
 					//b0aiTEST3(i*nvirt + a - nocc) = gmeinMO(a, i);
 				}
 			//}
