@@ -666,8 +666,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	Eigen::MatrixXcd fnx = Eigen::MatrixXcd::Zero(spinorSize, spinorSize);
 	constexpr bool FZxi = true;		// derivative spin zeeman
 	constexpr bool hgrad = true;		// derivative core hamiltonian
-	constexpr bool Jxi_D = false;		// Jxi[D], derivative Coulomb integrals
-	constexpr bool Kxi_D = false;		// Kxi[D], derivative Exchange integrals
+	constexpr bool Jxi_D = true;		// Jxi[D], derivative Coulomb integrals
+	constexpr bool Kxi_D = true;		// Kxi[D], derivative Exchange integrals
 	constexpr bool G_Sxi = true;		// G[Sxi], Coulomb and Exchange integrals contracted with DSD
 	constexpr bool Sxi_epsilon = true;	// Sxi_i*eps_i
 
@@ -862,8 +862,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 	//std::cout << "GSxi MO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxiMO.real() << "\n\n";
 	//std::cout << "GSxi MO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxiMO.imag() << "\n\n";
 
-	std::cout << "GSxi AAAAAAO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxi.real() << "\n\n";
-	std::cout << "GSxi AAAAAAO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxi.imag() << "\n\n";
+	//std::cout << "GSxi AAAAAAO von Ansgar real:\n" << std::fixed << std::setprecision(7) << GSxi.real() << "\n\n";
+	//std::cout << "GSxi AAAAAAO von Ansgar imag:\n" << std::fixed << std::setprecision(7) << GSxi.imag() << "\n\n";
 
 	//Eigen::MatrixXcd Jt(spinorSize, spinorSize);
 	//Jt << Jaa, Jab, Jba, Jbb;
@@ -891,8 +891,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart) {
 
 	Eigen::VectorXcd b0ai = Eigen::VectorXcd::Zero(nocc*nvirt);
 
-	//std::cout << "fnx real:\n" << std::fixed << std::setprecision(5) << fnx.real() << "\n\n";
-	//std::cout << "fnx imag:\n" << std::fixed << std::setprecision(5) << fnx.imag() << "\n\n";
+	std::cout << "fnx AO real:\n" << std::fixed << std::setprecision(5) << fnx.real() << "\n\n";
+	std::cout << "fnx AO imag:\n" << std::fixed << std::setprecision(5) << fnx.imag() << "\n\n";
 
 	const auto fnx2cMO = spinor.adjoint() * fnx.conjugate() * spinor;
 	const auto snx2cMO = spinor.adjoint() * snxBig.conjugate() * spinor;
