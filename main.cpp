@@ -240,6 +240,22 @@ int main(int argc, char* argv[]) {
 			std::string filename = "snxbraip" + std::to_string(I) + "_" + std::to_string(alpha);
 			saveMatrix(snxbraIAMOip, filename);
 
+			std::cout << "\n";
+			std::cout << I << " " << alpha << " real:\n" << std::fixed << std::setprecision(8) << snxbraIAMOip.block(0, 0, nocc, nocc).real() << "\n\n";
+			std::cout << I << " " << alpha << " imag:\n" << std::fixed << std::setprecision(8) << snxbraIAMOip.block(0, 0, nocc, nocc).imag() << "\n\n";
+
+			//std::cout << I << " " << alpha << " real:\n" << std::fixed << std::setprecision(8) << snxbraIA.real() << "\n\n";
+			//std::cout << I << " " << alpha << " imag:\n" << std::fixed << std::setprecision(8) << snxbraIA.imag() << "\n\n";
+			//const auto sym = 0.5 * (snxbraIA + snxbraIA.transpose());
+			//const auto asym = 0.5 * (snxbraIA - snxbraIA.transpose());
+			//std::cout << "sym real:\n" << std::fixed << std::setprecision(8) << sym.real() << "\n\n";
+			//std::cout << "asym real:\n" << std::fixed << std::setprecision(8) << asym.real() << "\n\n";
+			//std::cout << "\n\n";
+			//std::cout << "sym imag:\n" << std::fixed << std::setprecision(8) << sym.imag() << "\n\n";
+			//std::cout << "asym imag:\n" << std::fixed << std::setprecision(8) << asym.imag() << "\n\n";
+
+			//std::cout << "\n\n\n\n\n";
+
 			// ket derivative
 			const auto snxketIA = readMatrixTransform("k" + std::to_string(I) + cartDict[alpha]);
 			Eigen::MatrixXcd tmp2(spinorSize, spinorSize);
@@ -322,11 +338,12 @@ int main(int argc, char* argv[]) {
 
 	std::cout << std::fixed;
 	std::cout << std::setprecision(10);
-	//std::cout << "\n\n\nBerry-curvature term 1:\n" <<  berry.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
-	//std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 1:\n" <<  berry.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 2:\n" << berry2.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 3:\n" << berry3.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 2+3:\n" << berry3.imag() + berry2.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 4:\n" << berry4.imag() << "\n\n";
+	std::cout << "\n\n\nBerry-curvature term 5:\n" << berry5.imag() << "\n\n";
 	std::cout << "\n\n\nBerry-curvature total:\n" <<  berry6.imag() << "\n\n";
 	std::cout << "================================================================================\n";
 	saveBerry(berry6);

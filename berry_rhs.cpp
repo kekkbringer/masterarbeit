@@ -849,8 +849,8 @@ Eigen::VectorXcd berryRHS(const int nuc, const int cart, const Eigen::VectorXcd&
 	for (int i=0; i<nocc; i++) {
 		for (int a=nocc; a<spinorSize; a++) {
 			const int index = i*nvirt + a - nocc;
-			b0ai(index) = -fnx2cMO(a, i);
-			b0ai(index) += snx2cMO(a, i) * epsilon[i];
+			//b0ai(index) = -fnx2cMO(a, i);
+			//b0ai(index) += snx2cMO(a, i) * epsilon[i];
 		}
 	}
 	std::cout << " 1e part done" << std::flush;
